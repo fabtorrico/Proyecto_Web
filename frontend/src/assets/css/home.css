@@ -1004,6 +1004,106 @@ html {
 }
 
 
+
+/* ─────────────────────────────────────────
+   14. POLÍTICA DE PRIVACIDAD PAGE
+   ───────────────────────────────────────── */
+
+/* Imagen banner superior — centrada y con ancho máximo
+   (no ocupa todo el ancho en pantallas grandes, da aspecto más formal) */
+.policy-banner {
+  display: block;
+  max-width: 900px;   /* Limita el ancho del banner — más elegante que full-width */
+  width: 100%;
+  margin: 0 auto 30px auto; /* Centrado horizontal con espacio debajo */
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* Grid principal: ancho ampliado para que el texto no se vea tan apretado */
+.policy-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 3fr 1fr;  /* Texto ocupa más espacio que la imagen */
+  gap: 40px;
+  align-items: start;
+}
+
+/* Bloque de texto legal */
+.policy-text {
+  color: #374151;
+  line-height: 1.7;
+  font-size: 17px;
+}
+
+/* Título principal */
+.policy-text h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 18px;
+}
+
+/* Títulos de sección */
+.policy-text h2 {
+  font-size: 21px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-top: 22px;
+  margin-bottom: 8px;
+}
+
+/* Párrafos */
+.policy-text p {
+  margin-bottom: 6px;
+}
+
+/* Listas */
+.policy-text ul {
+  padding-left: 48px;
+  margin-bottom: 6px;
+}
+
+.policy-text ul li {
+  margin-bottom: 3px;
+}
+
+/* Imagen lateral — tamaño reducido para no competir con el texto legal */
+.policy-side img {
+  width: 100%;
+  max-width: 300px;   /* Limita el tamaño — la imagen es decorativa, no protagonista */
+  border-radius: 12px;
+  position: sticky;
+  top: 90px;          /* Se mantiene visible al hacer scroll */
+}
+
+/* Footer simple de página legal — minimalista, solo copyright.
+   Las páginas legales usan footer reducido para no distraer del contenido. */
+.policy-footer {
+  text-align: center;
+  margin-top: 60px;
+  padding: 20px;
+  color: #6b7280;
+  font-size: 14px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Responsive: 1 columna en tablet/mobile */
+@media (max-width: 768px) {
+  .policy-container {
+    grid-template-columns: 1fr;
+  }
+
+  .policy-side {
+    order: 2;
+  }
+
+  .policy-text {
+    order: 1;
+  }
+}
+
 /* ─────────────────────────────────────────
    13. LOGIN PAGE
    ───────────────────────────────────────── */

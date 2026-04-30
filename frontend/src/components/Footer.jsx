@@ -39,7 +39,7 @@ const Footer = () => {
         <div>
           <h3 className="footer__col-title">Legal</h3>
           <ul className="footer__list">
-            <li><a href="#privacidad">Política de Privacidad</a></li>
+            <li><a href="/politica-privacidad">Política de Privacidad</a></li>
             <li><a href="#terminos">Términos y Condiciones</a></li>
             <li><a href="#libro">Libro de Reclamaciones</a></li>
           </ul>
@@ -59,7 +59,15 @@ const Footer = () => {
             <li><a href="#beneficios">Características</a></li>
             <li><a href="#como-funciona">Cómo Funciona</a></li>
             <li><a href="#planes">Precios</a></li>
-            <li><a href="#contacto">Soporte</a></li>
+            <li>
+              <a
+                href="https://api.whatsapp.com/send/?phone=51922446325&text=Quiero+soporte&type=phone_number&app_absent=0"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Soporte
+              </a>
+            </li>
           </ul>
         </div>
 
@@ -74,14 +82,21 @@ const Footer = () => {
               </a>
             </li>
             <li>
-              <a href="tel:+51922446325" aria-label="Llamar por teléfono">
+              <a
+                href="https://api.whatsapp.com/send/?phone=51922446325&text=Quiero+contactar&type=phone_number&app_absent=0"
+                aria-label="Llamar por teléfono"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
                 📞 +51 922 446 325
               </a>
             </li>
             <li>
-              {/* rel="noopener noreferrer" protege contra ataques de window.opener */}
+              {/* Enlace externo a WhatsApp con mensaje predefinido de soporte.
+                   target="_blank" abre en nueva pestaña.
+                   rel="noopener noreferrer" evita acceso al window de esta página. */}
               <a
-                href="https://wa.me/51922446325"
+                href="https://api.whatsapp.com/send/?phone=51922446325&text=Quiero+contactar&type=phone_number&app_absent=0"
                 aria-label="Contactar por WhatsApp"
                 rel="noopener noreferrer"
                 target="_blank"
@@ -99,31 +114,38 @@ const Footer = () => {
           {/* Contenedor flex que alinea los íconos en una fila */}
           <div className="footer__social">
 
-            {/* ─ Facebook ─ */}
+            {/* ─ Facebook ─
+                 Enlace externo: abre WhatsApp con mensaje sobre Facebook.
+                 Reemplaza href por URL real de Facebook cuando esté disponible. */}
             <a
-              href="#"
+              href="https://api.whatsapp.com/send/?phone=51922446325&text=Quiero+seguirlos+en+Facebook&type=phone_number&app_absent=0"
               className="footer__social-icon"
               aria-label="Síguenos en Facebook"
               rel="noopener noreferrer"
+              target="_blank"
             >
               {/* Imagen importada desde assets/img/facebook.png */}
               <img src={facebookImg} alt="Facebook" className="footer__social-img" />
             </a>
 
-            {/* ─ Instagram ─ */}
+            {/* ─ Instagram ─
+                 Enlace externo: abre WhatsApp con mensaje sobre Instagram.
+                 Reemplaza href por URL real de Instagram cuando esté disponible. */}
             <a
-              href="#"
+              href="https://api.whatsapp.com/send/?phone=51922446325&text=Quiero+seguirlos+en+Instagram&type=phone_number&app_absent=0"
               className="footer__social-icon"
               aria-label="Síguenos en Instagram"
               rel="noopener noreferrer"
+              target="_blank"
             >
               {/* Imagen importada desde assets/img/instagram.png */}
               <img src={instagramImg} alt="Instagram" className="footer__social-img" />
             </a>
 
-            {/* ─ WhatsApp ─ abre en nueva pestaña */}
+            {/* ─ WhatsApp ─
+                 Enlace externo: abre WhatsApp con mensaje de contacto directo. */}
             <a
-              href="https://wa.me/51922446325"
+              href="https://api.whatsapp.com/send/?phone=51922446325&text=Quiero+contactar+por+WhatsApp&type=phone_number&app_absent=0"
               className="footer__social-icon"
               aria-label="Contáctanos por WhatsApp"
               rel="noopener noreferrer"

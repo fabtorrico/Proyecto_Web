@@ -1,21 +1,72 @@
 // ============================================================
 // Login.jsx — Página de inicio de sesión
 // Ruta: /login
-// Diseño centrado con logo, campos de usuario/contraseña y botón de acceso
+// Envía credenciales al backend y redirige al Dashboard
 // ============================================================
 
-import React from "react";
-import { useNavigate } from "react-router-dom"; // Para el enlace de regreso al inicio
-import "../assets/css/home.css";                 // Estilos globales (incluye los de .login-*)
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "../assets/css/home.css";
 
-// ──────────────────────────────────────────────────────────
-// Componente Login
-// Renderiza el formulario de acceso al sistema.
-// Los inputs son solo visuales por ahora — lógica de auth pendiente.
-// ──────────────────────────────────────────────────────────
+// URL base del backend — en producción cambiar por variable de entorno
+const API_URL = "http://localhost:3000/api";
+
 function Login() {
-  // useNavigate permite redirigir al usuario sin recargar la página
+  // ── Estado del formulario ──
+  const [correo,   setCorreo]   = useState("");
+  const [password, setPassword] = useState("");
+  // Controla el mensaje de error mostrado al usuario
+  const [error,    setError]    = useState("");
+  // Deshabilita el botón mientras espera la respuesta del servidor
+  const [loading,  setLoading]  = useState(false);
+
   const navigate = useNavigate();
+
+  // ── Manejador del login ──────────────────────────────────
+  const handleLogin = async () => {
+    // Limpiar error previo
+    setError("");
+
+    // Validación mínima en el frontend (el backend también valida)
+    if (!correo.trim() || !password.trim()) {
+      setError("Por favor completá todos los campos.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // POST al endpoint de autenticación
+      const res = await fetch(`${API_URL}/login`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        // Enviar credenciales como JSON
+        body: JSON.stringify({ correo: correo.trim(), password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // Guardar usuario en localStorage para usarlo en el Dashboard
+        localStorage.setItem("user", JSON.stringify(data.user));
+        // Redirigir al dashboard sin recargar la página
+        navigate("/dashboard");
+      } else {
+        // Mostrar el mensaje de error devuelto por el backend
+        setError(data.error || "Error al iniciar sesión");
+      }
+    } catch (err) {
+      // Error de red: backend no responde
+      console.error("[Login] fetch error:", err);
+      setError("No se pudo conectar con el servidor. Verificá que el backend esté corriendo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Permitir enviar el form con la tecla Enter
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") handleLogin();
+  };
 
   return (
     /* Contenedor principal: ocupa toda la pantalla, centra el formulario */
@@ -26,7 +77,6 @@ function Login() {
         src="/logo.png"
         alt="Logo LRPeru"
         className="login-logo"
-        /* onError oculta la imagen si el archivo no existe aún */
         onError={(e) => { e.target.style.display = "none"; }}
       />
 
@@ -41,16 +91,33 @@ function Login() {
         {/* Título del formulario */}
         <h2 className="login-title">Iniciar sesión</h2>
 
-        {/* ── Campo: usuario o correo ── */}
+        {/* ── Mensaje de error ── */}
+        {error && (
+          <p style={{
+            color: "#dc2626",
+            fontSize: "14px",
+            marginBottom: "12px",
+            background: "#fee2e2",
+            padding: "8px 12px",
+            borderRadius: "6px",
+          }}>
+            {error}
+          </p>
+        )}
+
+        {/* ── Campo: correo ── */}
         <label className="login-label" htmlFor="login-user">
-          Nombre de usuario o correo electrónico
+          Correo electrónico
         </label>
         <input
           id="login-user"
-          type="text"
+          type="email"
           className="login-input"
           placeholder="usuario@ejemplo.com"
-          autoComplete="username"  /* Permite que el navegador autocomplete */
+          autoComplete="username"
+          value={correo}
+          onChange={(e) => setCorreo(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
 
         {/* ── Campo: contraseña ── */}
@@ -63,27 +130,34 @@ function Login() {
           className="login-input"
           placeholder="••••••••"
           autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
 
         {/* ── Opción "Recuérdame" ── */}
         <div className="login-options">
           <label className="login-remember">
             <input type="checkbox" />
-            {/* Texto junto al checkbox */}
             <span>Recuérdame</span>
           </label>
         </div>
 
         {/* ── Botón principal de acceso ── */}
-        <button className="login-btn" type="button">
-          Acceder
+        <button
+          className="login-btn"
+          type="button"
+          onClick={handleLogin}
+          disabled={loading}
+        >
+          {loading ? "Verificando..." : "Acceder"}
         </button>
 
         {/* ── Enlace para volver al inicio ── */}
         <button
           className="login-back"
           type="button"
-          onClick={() => navigate("/")} /* Regresa a la landing sin recargar */
+          onClick={() => navigate("/")}
         >
           ← Volver al inicio
         </button>
