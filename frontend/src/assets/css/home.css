@@ -1,0 +1,1144 @@
+/* ============================================================
+   home.css — Estilos globales de la Landing Page
+   Proyecto: LRPeru - Libro de Reclamaciones Virtual
+   Organizado por bloques/secciones para fácil mantenimiento
+   ============================================================ */
+
+/* ─────────────────────────────────────────
+   1. RESET Y VARIABLES GLOBALES
+   ───────────────────────────────────────── */
+
+/* Variables de color y fuente reutilizables en todo el proyecto */
+:root {
+  /* ── Paleta principal ── */
+  --color-primary: #1d4ed8;       /* Azul principal — botones, acentos */
+  --color-primary-dark: #1e3a8a;  /* Azul oscuro — hover y footer */
+  --color-primary-light: #eef2ff; /* Azul muy claro — fondos de íconos */
+
+  /* ── Botón secundario (verde) ── */
+  --color-secondary: #10b981;      /* Verde esmeralda — botón secundario */
+  --color-secondary-dark: #059669; /* Verde oscuro — hover del botón verde */
+
+  /* ── Textos ── */
+  --color-text-dark: #111827;     /* Negro casi puro — títulos */
+  --color-text-mid: #374151;      /* Gris oscuro — subtítulos */
+  --color-text-soft: #6b7280;     /* Gris medio — descripciones */
+
+  /* ── Fondos ── */
+  --color-bg-white: #ffffff;      /* Blanco puro */
+  --color-bg-light: #f8fafc;      /* Gris muy claro — hero y secciones */
+  --color-bg-gray: #f8fafc;       /* Igual al light para consistencia */
+  --color-bg-dark: #1e3a8a;       /* Azul oscuro — footer */
+  --color-border: #e5e7eb;        /* Borde ligero de cards */
+  --color-white: #ffffff;
+
+  /* ── Sombras ── */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);          /* Sombra mínima */
+  --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.08);         /* Sombra cards normal */
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.14);         /* Sombra cards hover */
+  --shadow-blue: 0 8px 20px rgba(29, 78, 216, 0.30);    /* Sombra azul botones */
+
+  /* ── Bordes y transiciones ── */
+  --radius-sm: 8px;              /* Botones */
+  --radius-md: 12px;             /* Cards pequeñas */
+  --radius-lg: 16px;             /* Cards principales */
+  --transition: all 0.3s ease;   /* Transición global uniforme */
+}
+
+/* Reset básico para todos los elementos */
+*,
+*::before,
+*::after {
+  box-sizing: border-box; /* Incluye padding y border en el ancho total */
+  margin: 0;              /* Elimina márgenes por defecto */
+  padding: 0;             /* Elimina paddings por defecto */
+}
+
+/* Fuente base y color de texto para toda la página */
+body {
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif; /* Fuente moderna y limpia */
+  font-size: 17px;                /* Tamaño base aumentado para mejor legibilidad */
+  color: var(--color-text-dark);  /* Color de texto por defecto */
+  background-color: var(--color-bg-white); /* Fondo blanco base */
+  line-height: 1.7;  /* Interlineado generoso para mejor lectura */
+}
+
+/* Ancla de scroll suave para navegación interna */
+html {
+  scroll-behavior: smooth;
+}
+
+
+/* ─────────────────────────────────────────
+   2. UTILIDADES GENERALES
+   ───────────────────────────────────────── */
+
+/* Contenedor centrado con ancho máximo — reutilizable en todas las secciones */
+/* Evita que el contenido se "estire" en pantallas ultra-anchas */
+.container {
+  width: 100%;
+  max-width: 1200px;  /* Ancho máximo profesional tipo SaaS */
+  margin: 0 auto;     /* Centra horizontalmente */
+  padding: 0 20px;    /* Padding lateral mínimo para mobile */
+}
+
+/* Clase utilitaria para centrar texto */
+.text-center {
+  text-align: center;
+}
+
+/* Clase para ocultar visualmente pero mantener accesibilidad */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+
+/* ─────────────────────────────────────────
+   3. NAVBAR
+   ───────────────────────────────────────── */
+
+/* Barra de navegación fija en la parte superior */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  height: 70px;
+  background-color: var(--color-bg-white);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;            /* Padding reducido — el container interno centra */
+  transition: var(--transition);
+}
+
+/* Sombra que aparece cuando el navbar detecta scroll (añadida por JS) */
+.navbar--scrolled {
+  box-shadow: var(--shadow-md);
+}
+
+/* Contenedor interno del navbar — usa el mismo max-width que .container */
+.navbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1200px;  /* Alineado con el container global */
+  margin: 0 auto;
+}
+
+/* Texto del logo/marca */
+.navbar__logo {
+  font-size: 26px;
+  font-weight: 700;             /* Negrita para destacar */
+  color: var(--color-text-dark);
+  letter-spacing: -0.5px;       /* Ligero ajuste de espaciado */
+  text-decoration: none;        /* Sin subrayado si se usa como enlace */
+  cursor: pointer;
+}
+
+/* Acento de color en la segunda parte del logo (ej: "LR" vs "Peru") */
+.navbar__logo span {
+  color: var(--color-primary);
+}
+
+/* Botón "Ingresa" del navbar */
+.navbar__btn {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 28px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition), transform var(--transition);
+  text-decoration: none;         /* Por si se usa como <a> */
+}
+
+/* Hover: oscurece el botón ligeramente */
+.navbar__btn:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-1px); /* Micro-elevación al pasar el cursor */
+}
+
+
+/* ─────────────────────────────────────────
+   4. HERO
+   ───────────────────────────────────────── */
+
+/* ── Barra de anuncio verde encima del hero ── */
+/* Ocupa el 100% del ancho de pantalla, sin container */
+.hero__topbar {
+  width: 100%;                  /* Ancho completo — no usa .container */
+  background-color: #10b981;    /* Verde esmeralda */
+  color: #ffffff;
+  text-align: center;
+  padding: 20px 20px;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Sección hero — compacta y sin altura forzada.
+   Se elimina min-height para que el alto lo defina el contenido,
+   igual que en diseños SaaS reales donde no hay aire vacío. */
+.hero {
+  width: 100%;
+  /* Sin min-height: el hero ocupa lo que necesita, no más */
+  background-color: var(--color-bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;  /* Reducido de 80px → 60px para aspecto más compacto */
+  text-align: center;
+}
+
+/* Contenedor interno del hero — reducido a 850px para mejor proporción */
+.hero__content {
+  max-width: 850px;  /* 850px: más ajustado que 900px, mejor lectura en desktop */
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  text-align: center;
+}
+
+/* Etiqueta decorativa sobre el título (pequeña pastilla de color) */
+.hero__badge {
+  display: inline-block;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 6px 18px;
+  border-radius: 20px;         /* Forma de píldora */
+  margin-bottom: 18px;
+  letter-spacing: 0.3px;
+}
+
+/* Título principal del hero — azul corporativo, NO negro */
+.hero__title {
+  font-size: 52px;
+  font-weight: 800;
+  color: #1e3a8a;     /* Azul corporativo oscuro — identidad de marca */
+  line-height: 1.15;
+  margin-bottom: 20px;
+  letter-spacing: -0.5px;
+}
+
+/* Descripción debajo del título */
+.hero__description {
+  font-size: 21px;
+  color: #6b7280;              /* Gris medio — legible sin competir con el título */
+  line-height: 1.7;
+  margin: 0 auto 30px auto;
+  max-width: 700px;
+}
+
+/* Contenedor de botones del hero */
+.hero__actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-top: 10px;  /* Pequeño espacio extra sobre los botones */
+}
+
+/* Base compartida de los botones del hero */
+/* Estilos propios para no depender de .btn-primary / .btn-secondary */
+.hero__btn {
+  display: inline-flex;       /* flex para alinear ícono + texto */
+  align-items: center;
+  gap: 10px;                  /* Espacio entre ícono y texto */
+  padding: 15px 32px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;  /* Transición global suave */
+}
+
+/* Botón azul corporativo */
+.hero__btn--blue {
+  background-color: #1e3a8a;  /* Azul oscuro corporativo */
+  color: #ffffff;
+}
+
+/* Hover: brillo ligeramente reducido */
+.hero__btn--blue:hover {
+  background-color: #1e40af;  /* Azul un tono más claro al pasar el cursor */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(30, 58, 138, 0.35);
+}
+
+/* Botón verde */
+.hero__btn--green {
+  background-color: #10b981;  /* Verde esmeralda */
+  color: #ffffff;
+}
+
+/* Hover: verde oscuro */
+.hero__btn--green:hover {
+  background-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+}
+
+
+/* ─────────────────────────────────────────
+   5. BOTONES (reutilizables en toda la página)
+   ───────────────────────────────────────── */
+
+/* Botón primario — fondo azul sólido */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: 15px 32px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition), transform var(--transition), box-shadow var(--transition);
+  text-decoration: none;  /* Compatibilidad si se usa como <a> */
+  display: inline-block;
+}
+
+/* Hover del botón primario */
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  transform: translateY(-2px);        /* Leve elevación */
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); /* Sombra azul suave */
+}
+
+/* Botón secundario — verde sólido para contraste con el botón azul */
+.btn-secondary {
+  background-color: var(--color-secondary); /* Verde esmeralda */
+  color: var(--color-white);
+  border: 2px solid var(--color-secondary);
+  border-radius: var(--radius-sm);
+  padding: 15px 32px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+  display: inline-block;
+}
+
+/* Hover: verde más oscuro + elevación */
+.btn-secondary:hover {
+  background-color: var(--color-secondary-dark);
+  border-color: var(--color-secondary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+
+/* ─────────────────────────────────────────
+   6. SECCIONES — estructura base compartida
+   ───────────────────────────────────────── */
+
+/* Estilos base aplicados a todas las secciones de contenido */
+/* El padding lateral es pequeño — el .container interno lo maneja */
+.section {
+  padding: 80px 0;  /* Solo padding vertical; el container limita el ancho */
+  width: 100%;
+}
+
+/* Fondo alterno gris para diferenciar secciones visualmente */
+.section--gray {
+  background-color: var(--color-bg-gray);
+}
+
+/* Fondo blanco explícito */
+.section--white {
+  background-color: var(--color-bg-white);
+}
+
+/* Título de sección — centrado y con espacio debajo */
+.section__title {
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 700;
+  color: var(--color-text-dark);
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+/* Subtítulo opcional debajo del título de sección */
+.section__subtitle {
+  font-size: 19px;
+  color: var(--color-text-soft);
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 54px auto; /* Centrado y con espacio antes del contenido */
+  line-height: 1.7;
+}
+
+
+/* ─────────────────────────────────────────
+   7. BENEFITS — Cards de beneficios
+   ───────────────────────────────────────── */
+
+/* Grid responsivo para las cards de beneficios */
+.benefits__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+/* Título de la sección Benefits — override de color del section__title genérico */
+.benefits__title {
+  font-size: 40px;
+  font-weight: 700;
+  color: #1e3a8a;     /* Azul corporativo en lugar del negro genérico */
+  margin-bottom: 10px;
+}
+
+/* Card individual de beneficio */
+.benefit-card {
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-lg);              /* 16px */
+  padding: 32px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  border: 1px solid transparent;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Hover: elevación marcada con sombra más fuerte */
+.benefit-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  border-color: var(--color-border);  /* Borde sutil aparece en hover */
+}
+
+/* Ícono dentro de círculo azul claro — refuerza identidad de color */
+.benefit-card__icon {
+  width: 62px;
+  height: 62px;
+  background-color: var(--color-primary-light); /* #eef2ff */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: #1d4ed8;     /* Azul principal — aunque emojis no heredan color, aplica a texto */
+}
+
+/* Título de la card — azul corporativo para jerarquía visual fuerte */
+.benefit-card__title {
+  font-size: 19px;
+  font-weight: 600;          /* Semibold: destacado pero no agresivo */
+  color: #1e3a8a;            /* Azul corporativo, coherente con el título de sección */
+}
+
+/* Descripción de la card — gris suave para no competir con el título */
+.benefit-card__desc {
+  font-size: 16px;
+  color: #6b7280;            /* Gris medio — legible y discreto */
+  line-height: 1.7;
+}
+
+
+/* ─────────────────────────────────────────
+   8. HOW IT WORKS — Pasos del proceso
+   ───────────────────────────────────────── */
+
+/* Grid de 4 columnas para los pasos */
+.steps__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+/* Card de cada paso — fondo blanco con sombra suave sobre fondo gris */
+.step-card {
+  background-color: var(--color-bg-white);
+  border-radius: var(--radius-lg);    /* 16px */
+  padding: 38px 28px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); /* Sombra para destacar sobre fondo gris */
+  transition: var(--transition);
+}
+
+/* Hover sutil en los pasos */
+.step-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.10);
+}
+
+/* Número grande del paso */
+.step-card__number {
+  font-size: 52px;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+/* Título del paso */
+.step-card__title {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+}
+
+/* Descripción breve del paso */
+.step-card__desc {
+  font-size: 16px;
+  color: var(--color-text-soft);
+  line-height: 1.7;
+}
+
+
+/* ─────────────────────────────────────────
+   9. TESTIMONIALS — Reseñas de clientes
+   ───────────────────────────────────────── */
+
+/* Grid para las cards de testimonios */
+.testimonials__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 columnas en desktop */
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Card individual de testimonio — padding generoso y sombra suave */
+.testimonial-card {
+  background-color: var(--color-bg-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);   /* 16px */
+  padding: 38px 34px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: var(--transition);
+}
+
+/* Hover sutil en testimonios */
+.testimonial-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.10);
+}
+
+/* Comillas decorativas o estrellas */
+.testimonial-card__stars {
+  color: #f59e0b;   /* Amarillo/dorado para estrellas */
+  font-size: 20px;
+  letter-spacing: 3px;
+}
+
+/* Texto del testimonio */
+.testimonial-card__text {
+  font-size: 17px;
+  color: var(--color-text-mid);
+  line-height: 1.8;
+  font-style: italic; /* Estilo de cita */
+}
+
+/* Pie de la card: nombre y tipo de negocio */
+.testimonial-card__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+}
+
+/* Nombre del cliente */
+.testimonial-card__name {
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--color-text-dark);
+}
+
+/* Tipo de negocio */
+.testimonial-card__business {
+  font-size: 15px;
+  color: var(--color-text-soft);
+}
+
+
+/* ─────────────────────────────────────────
+   10. PRICING — Planes y precios
+   ───────────────────────────────────────── */
+
+/* Título de cada grupo/categoría de planes */
+.pricing__group-title {
+  font-size: 23px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--color-primary-light); /* Línea decorativa */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Separador entre grupos de planes */
+.pricing__group {
+  margin-bottom: 48px; /* Espacio entre cada fila de planes */
+}
+
+/* Última fila sin margen inferior extra */
+.pricing__group:last-child {
+  margin-bottom: 0;
+}
+
+/* Grid de 3 columnas para cada fila de planes */
+.pricing__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 por fila siempre */
+  gap: 24px;
+}
+
+/* Card de cada plan — altura uniforme con flex + space-between.
+   justify-content: space-between empuja el botón y el soporte al fondo,
+   sin importar cuántos features tenga cada plan. */
+.pricing-card {
+  background-color: var(--color-bg-white);
+  border: 2px solid var(--color-border);
+  border-radius: 16px;                          /* Consistente en todas las cards */
+  padding: 38px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;           /* Centra horizontalmente todo el contenido */
+  justify-content: space-between; /* Distribuye espacio — botón siempre abajo */
+  gap: 14px;
+  text-align: center;            /* Centra el texto en todos los elementos hijo */
+  transition: var(--transition);
+  height: 100%;                  /* Ocupa toda la altura del grid row */
+  min-height: 460px;             /* Altura mínima igual para TODAS las cards */
+}
+
+/* Card destacada — borde azul más grueso y sombra pronunciada */
+.pricing-card--featured {
+  border-color: var(--color-primary);
+  border-width: 3px;                       /* Borde más grueso para destacar */
+  box-shadow: 0 12px 32px rgba(29, 78, 216, 0.15);
+  transform: scale(1.03);
+}
+
+/* Hover en cualquier card de pricing */
+.pricing-card:hover {
+  transform: translateY(-5px) scale(1.01);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+/* Etiqueta "MÁS POPULAR" — píldora azul corporativo */
+.pricing-card__badge {
+  background-color: #1e3a8a;   /* Azul corporativo — más serio que el azul brillante */
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;        /* Píldora perfecta */
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  align-self: center;          /* Centrado horizontal dentro del flex */
+}
+
+/* Nombre del plan */
+.pricing-card__name {
+  font-size: 21px;
+  font-weight: 700;
+  color: #1e3a8a;    /* Azul corporativo — coherente con el resto de la UI */
+}
+
+/* Ícono del plan — centrado, tamaño uniforme en todas las cards */
+.pricing-card__icon {
+  font-size: 34px;    /* Igual en todas las cards — consistencia visual */
+  margin-bottom: 4px;
+  line-height: 1;
+  text-align: center;
+  width: 100%;        /* Asegura que el centrado funcione con text-align */
+}
+
+/* Bloque de precio: "S/ 149/año" — todo en una línea compacta */
+.pricing-card__price {
+  font-size: 34px;
+  font-weight: 800;
+  color: #1e3a8a;     /* Azul corporativo oscuro */
+  line-height: 1.2;
+  display: flex;
+  align-items: baseline;  /* Alinea moneda, número y período en la base */
+  gap: 2px;
+  justify-content: center;
+}
+
+/* Símbolo de moneda — tamaño menor al número principal */
+.pricing-card__currency {
+  font-size: 19px;
+  font-weight: 700;
+}
+
+/* Período de vigencia — inline junto al precio, gris discreto */
+.pricing-card__period {
+  font-size: 16px;
+  font-weight: 500;
+  color: #6b7280;    /* Gris — no compite con el número principal */
+  margin-left: 2px;
+}
+
+/* Lista de beneficios — centrada para consistencia con el resto de la card */
+.pricing-card__features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  text-align: left;     /* Los ítems se leen mejor alineados a la izquierda */
+  flex-grow: 1;         /* Ocupa el espacio disponible — empuja botón al fondo */
+}
+
+/* Cada beneficio individual */
+.pricing-card__features li {
+  font-size: 16px;
+  color: var(--color-text-mid);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Check verde antes de cada beneficio */
+.pricing-card__features li::before {
+  content: "✔";     /* Check más sólido visualmente */
+  color: #10b981;    /* Verde esmeralda */
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Botón CTA — azul corporativo, ancho completo, igual en todas las cards */
+.pricing-card__btn {
+  width: 100%;             /* Mismo ancho en todas las cards sin excepción */
+  margin-top: 10px;        /* Pequeño espacio sobre el botón */
+  background-color: #1e3a8a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;           /* No se comprime aunque haya poco espacio */
+}
+
+/* Hover del botón */
+.pricing-card__btn:hover {
+  background-color: #1e40af;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.35);
+}
+
+/* Texto de soporte con emoji 🎧 */
+.pricing-card__support {
+  font-size: 15px;
+  color: #6b7280;
+  margin-top: 10px;
+  text-align: center;
+  flex-shrink: 0;   /* No se comprime — siempre visible al fondo */
+}
+
+/* Estilo especial para el precio "Precio a Tratar" (planes sin monto fijo) */
+.pricing-card__price--custom {
+  font-size: 24px;
+  font-weight: 700;
+  color: #6b7280;   /* Gris — diferenciado del azul de precios numéricos */
+}
+
+/* Override del título de la sección Pricing — más grande y colorido */
+.pricing__main-title {
+  font-size: 42px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 48px;
+}
+
+
+/* ─────────────────────────────────────────
+   11. FOOTER
+   ───────────────────────────────────────── */
+
+/* Footer — azul oscuro profesional, diferente al negro genérico */
+.footer {
+  background-color: var(--color-bg-dark); /* #1e3a8a — azul oscuro */
+  color: var(--color-white);
+  padding: 60px 20px 30px; /* Padding lateral pequeño — container lo centra */
+}
+
+/* Grid interno del footer — 4 columnas iguales */
+.footer__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 columnas uniformes */
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Nombre de la marca en el footer */
+.footer__brand {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-white);
+  margin-bottom: 14px;
+}
+
+/* Acento del logo en el footer */
+.footer__brand span {
+  color: #60a5fa; /* Azul más claro sobre fondo oscuro */
+}
+
+/* Texto descriptivo corto de la empresa en el footer */
+.footer__tagline {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.8;
+  max-width: 300px;
+}
+
+/* Título de cada columna del footer */
+.footer__col-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-white);
+  margin-bottom: 18px;
+}
+
+/* Lista de enlaces/contacto del footer */
+.footer__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Cada ítem de lista del footer */
+.footer__list li {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color var(--transition);
+}
+
+/* Enlace del footer */
+.footer__list a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+/* Hover sobre enlace del footer */
+.footer__list a:hover {
+  color: var(--color-white);
+}
+
+/* ── Contenedor de íconos de redes sociales ──
+   Alineados en fila con flexbox, separados por gap. */
+.footer__social {
+  display: flex;       /* Fila horizontal */
+  flex-direction: row; /* Explícito: izquierda a derecha */
+  gap: 12px;           /* Separación uniforme entre íconos */
+  margin-top: 8px;
+  align-items: center;
+}
+
+/* ── Envoltorio <a> de cada ícono social ──
+   Fondo semitransparente, bordes redondeados y transición suave. */
+.footer__social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;                              /* Área táctil cómoda */
+  height: 40px;
+  border-radius: 10px;                      /* Bordes redondeados */
+  background-color: rgba(255, 255, 255, 0.12); /* Fondo con ligera transparencia */
+  text-decoration: none;
+  cursor: pointer;
+  /* Transición para fondo y elevación */
+  transition: background-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* ── Imagen dentro del ícono social ──
+   Tamaño uniforme de 20px, sin desbordarse del contenedor. */
+.footer__social-img {
+  width: 20px;   /* Tamaño uniforme solicitado */
+  height: 20px;
+  object-fit: contain; /* Mantiene proporciones sin recortar */
+  display: block;
+}
+
+/* ── Hover: elevación con sombra ──
+   Eleva visualmente el ícono y aclara el fondo. */
+.footer__social-icon:hover {
+  background-color: rgba(255, 255, 255, 0.25); /* Fondo más visible al pasar el mouse */
+  transform: translateY(-3px);                  /* Elevación suave */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);  /* Sombra de elevación */
+}
+
+/* Imagen del Libro de Reclamaciones en el footer */
+.footer-book {
+  width: 80px;          /* Tamaño compacto para no dominar la columna */
+  margin-top: 14px;
+  border-radius: 4px;   /* Borde suave */
+  display: block;       /* Evita espacio extra debajo de la imagen */
+}
+
+/* Línea de copyright debajo del footer */
+.footer__bottom {
+  max-width: 1200px;
+  margin: 28px auto 0;
+  text-align: center;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.50);
+}
+
+
+/* ─────────────────────────────────────────
+   12. RESPONSIVE — Breakpoints
+   ───────────────────────────────────────── */
+
+/* ── Tablet: pantallas <= 960px ── */
+@media (max-width: 960px) {
+
+  /* Hero: reducir tamaño de título */
+  .hero__title {
+    font-size: 42px;
+  }
+
+  /* Benefits: 2 columnas */
+  .benefits__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Steps: 2 columnas */
+  .steps__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Testimonials: 1 columna centrada */
+  .testimonials__grid {
+    grid-template-columns: 1fr;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Pricing: 2 columnas en tablet (3 planes caben mejor) */
+  .pricing__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Card destacada: sin escala en tablet para no romper el grid */
+  .pricing-card--featured {
+    transform: scale(1);
+  }
+
+  /* Footer: 2 columnas */
+  .footer__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── Mobile: pantallas <= 600px ── */
+@media (max-width: 600px) {
+
+  /* Hero: título más compacto */
+  .hero__title {
+    font-size: 34px;
+  }
+
+  .hero {
+    padding: 60px 20px;
+  }
+
+  /* Benefits y Steps: 1 columna */
+  .benefits__grid,
+  .steps__grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Pricing: 1 columna */
+  .pricing__grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Footer: 1 columna en mobile */
+  .footer__grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  /* Botones del hero: ancho completo */
+  .hero__actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+
+/* ─────────────────────────────────────────
+   13. LOGIN PAGE
+   ───────────────────────────────────────── */
+
+/* Pantalla completa centrada — fondo gris claro */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Alineado hacia arriba en lugar de centrado */
+  align-items: center;
+  background: #f3f4f6;
+  padding: 60px 20px 40px; /* Padding superior para dejar aire desde el tope */
+}
+
+/* Logo superior — tamaño moderado */
+.login-logo {
+  width: 200px;
+  margin-bottom: 12px;
+}
+
+/* Nombre de marca bajo el logo */
+.login-brand {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 28px;
+  letter-spacing: -0.5px;
+}
+
+/* Acento del logo */
+.login-brand span {
+  color: #1d4ed8;
+}
+
+/* Caja blanca del formulario */
+.login-box {
+  background: #ffffff;
+  padding: 40px 36px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Título del formulario */
+.login-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+/* Etiqueta de cada campo */
+.login-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+/* Input de texto y contraseña */
+.login-input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #111827;
+  background: #f9fafb;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+/* Focus: resalta el campo activo */
+.login-input:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+  background: #ffffff;
+}
+
+/* Contenedor de la opción "Recuérdame" */
+.login-options {
+  margin-bottom: 20px;
+}
+
+/* Label del checkbox con texto al lado */
+.login-remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+/* Botón principal "Acceder" */
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  background: #1e3a8a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.25s ease, transform 0.2s ease;
+  margin-bottom: 14px;
+}
+
+/* Hover del botón principal */
+.login-btn:hover {
+  background: #1e40af;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(30, 58, 138, 0.30);
+}
+
+/* Botón "Volver al inicio" — estilo discreto tipo texto */
+.login-back {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+  padding: 4px;
+  transition: color 0.2s ease;
+}
+
+/* Hover: se vuelve azul */
+.login-back:hover {
+  color: #1d4ed8;
+}
