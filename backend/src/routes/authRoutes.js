@@ -4,12 +4,14 @@
 // ============================================================
 
 import express from "express";
-import { login } from "../controllers/authController.js";
+import { login, getUser } from "../controllers/authController.js";
 
 const router = express.Router();
 
 // POST /api/login
-// Body esperado: { correo: string, password: string }
 router.post("/login", login);
+
+// GET /api/user/:id — devuelve datos frescos del usuario desde la BD
+router.get("/user/:id", getUser);
 
 export default router;

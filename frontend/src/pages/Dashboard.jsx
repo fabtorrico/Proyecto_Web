@@ -5,8 +5,12 @@
 //    Fase 2: reemplazar por validación JWT contra el backend.
 // ============================================================
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+// Librería para generar el código QR como elemento canvas
+import { QRCodeCanvas } from "qrcode.react";
+// Imagen del libro usada en la vista previa del widget de integración
+import libroImg from "../assets/img/libro.png";
 
 // ── Registros por página en la tabla de pendientes ──
 const ITEMS_PER_PAGE = 10;
@@ -50,6 +54,144 @@ const getExpirationDate = () => {
 };
 
 // ─────────────────────────────────────────────────────────
+// ReportsTable — tabla reutilizable de reportes con paginación.
+// La única diferencia entre pestañas es el texto del botón en Acciones.
+// Cada instancia maneja su propio estado de página de forma independiente.
+function ReportsTable({ actionLabel }) {
+  const [page, setPage] = useState(1);
+  const totalPages     = Math.ceil(mockReports.length / ITEMS_PER_PAGE);
+  const visibleReports = mockReports.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
+
+  return (
+    <div>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          background: "#fff",
+          border: "1px solid #d1d5db",
+          fontSize: "14px",
+          tableLayout: "fixed",   /* anchos fijos → misma distribución en ambas pestañas */
+        }}>
+          {/* Anchos de columna explícitos para que no varíen con el contenido */}
+          <colgroup>
+            <col style={{ width: "10%" }} />   {/* N° Correlativo */}
+            <col style={{ width: "16%" }} />   {/* Cód. Seguimiento */}
+            <col style={{ width: "22%" }} />   {/* Cliente */}
+            <col style={{ width: "10%" }} />   {/* Tipo */}
+            <col style={{ width: "10%" }} />   {/* Monto */}
+            <col style={{ width: "12%" }} />   {/* Fecha */}
+            <col style={{ width: "20%" }} />   {/* Acciones */}
+          </colgroup>
+          <thead>
+            <tr style={{ background: "#f9fafb" }}>
+              {["N° Correlativo", "Cód. Seguimiento", "Cliente", "Tipo", "Monto", "Fecha", "Acciones"].map((h) => (
+                <th key={h} style={{
+                  padding: "10px 12px",
+                  textAlign: "left",
+                  fontWeight: 600,
+                  color: "#374151",
+                  borderBottom: "1px solid #d1d5db",
+                  whiteSpace: "nowrap",
+                }}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {visibleReports.map((report) => (
+              <tr key={report.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                <td style={{ padding: "10px 12px" }}>{report.correlativo}</td>
+                <td style={{ padding: "10px 12px", color: "#1e3a8a", fontWeight: 500 }}>{report.codigoSeguimiento}</td>
+                <td style={{ padding: "10px 12px" }}>{report.cliente}</td>
+                <td style={{ padding: "10px 12px" }}>
+                  <span style={{
+                    display: "inline-block",
+                    padding: "2px 10px",
+                    borderRadius: "999px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    background: report.tipo === "Reclamo" ? "#fee2e2" : "#fef9c3",
+                    color:      report.tipo === "Reclamo" ? "#dc2626"  : "#854d0e",
+                  }}>
+                    {report.tipo}
+                  </span>
+                </td>
+                <td style={{ padding: "10px 12px" }}>{report.monto}</td>
+                <td style={{ padding: "10px 12px", color: "#6b7280" }}>{report.fecha}</td>
+                <td style={{ padding: "10px 12px" }}>
+                  {/* Botón de acción — texto varía según la pestaña */}
+                  <button style={{
+                    padding: "4px 14px",
+                    background: "#1e3a8a",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                  }}>
+                    {actionLabel}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ── Controles de paginación ── */}
+      <div style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: "16px",
+        marginTop: "16px",
+      }}>
+        <button
+          onClick={() => setPage((p) => p - 1)}
+          disabled={page === 1}
+          style={{
+            padding: "6px 16px",
+            borderRadius: "6px",
+            border: "1px solid #d1d5db",
+            background: page === 1 ? "#f3f4f6" : "#fff",
+            color: page === 1 ? "#9ca3af" : "#374151",
+            cursor: page === 1 ? "not-allowed" : "pointer",
+            fontSize: "14px",
+          }}
+        >
+          ← Anterior
+        </button>
+
+        <span style={{ fontSize: "14px", color: "#374151" }}>
+          Página {page} de {totalPages}
+        </span>
+
+        <button
+          onClick={() => setPage((p) => p + 1)}
+          disabled={page === totalPages}
+          style={{
+            padding: "6px 16px",
+            borderRadius: "6px",
+            border: "1px solid #d1d5db",
+            background: page === totalPages ? "#f3f4f6" : "#fff",
+            color: page === totalPages ? "#9ca3af" : "#374151",
+            cursor: page === totalPages ? "not-allowed" : "pointer",
+            fontSize: "14px",
+          }}
+        >
+          Siguiente →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
 function Dashboard() {
   const navigate = useNavigate();
 
@@ -75,20 +217,59 @@ function Dashboard() {
   // ── Estado de pestañas ───────────────────────────────
   const [activeTab, setActiveTab] = useState("Pendientes");
 
-  // ── Estado de paginación ─────────────────────────────
-  const [currentPage, setCurrentPage] = useState(1);
+  // ── Hooks de la sección QR ────────────────────────────
+  // Deben declararse aquí (antes del early return) para respetar
+  // las reglas de hooks de React.
+  const [showQR,    setShowQR]    = useState(false);
+  const qrRef                     = useRef(null);
+  const [widgetSize, setWidgetSize] = useState("Mediano");
 
-  // Recalcular páginas cuando cambia la fuente de datos
-  const totalPages    = Math.ceil(mockReports.length / ITEMS_PER_PAGE);
-  const currentReports = mockReports.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  // ── Estados de los formularios de Ajuste ─────────────
+  // Inicializados vacíos; se rellenan desde el backend en el useEffect.
+  const [userForm, setUserForm] = useState({
+    nombre: "", apellido: "", correo: "", web: "",
+  });
+  const [businessForm, setBusinessForm] = useState({
+    razon_social: "", ruc: "", direccion: "", logo_url: "",
+  });
+
+  // ── Estado del formulario de cambio de contraseña ────────
+  // ⚠️ Solo visual por ahora. NO guardar contraseñas aquí.
+  // Implementación real: validar contraseña antigua en backend
+  // y guardar la nueva con bcrypt (Fase 2).
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+  });
+
+  // ── Carga de datos frescos desde la base de datos ────
+  // Se ejecuta cuando el usuario está disponible.
+  // Evita mostrar datos desactualizados de localStorage.
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(`http://localhost:3000/api/user/${user.id}`)
+      .then((res) => res.json())
+      .then(({ user: fresh }) => {
+        if (!fresh) return;
+        setUserForm({
+          nombre:   fresh.nombre   || "",
+          apellido: fresh.apellido || "",
+          correo:   fresh.correo   || "",
+          web:      fresh.web      || "",
+        });
+        setBusinessForm({
+          razon_social: fresh.razon_social || "",
+          ruc:          fresh.ruc          || "",
+          direccion:    fresh.direccion    || "",
+          logo_url:     fresh.logo_url     || "",
+        });
+      })
+      .catch((err) => console.error("[Dashboard] fetch user error:", err));
+  }, [user?.id]);
 
   // Reiniciar paginación al cambiar de tab
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setCurrentPage(1);
   };
 
   // ── Logout ────────────────────────────────────────────
@@ -101,6 +282,83 @@ function Dashboard() {
   if (!user) return null;
 
   const companyName = user?.razon_social || "Empresa sin nombre";
+
+  // Estilos reutilizables para los inputs y botones de la pestaña Ajuste
+  const inputStyle = {
+    width: "320px",
+    padding: "8px",
+    border: "1px solid #9ca3af",
+    borderRadius: "4px",
+    background: "#fff",
+    color: "#111827",
+    fontSize: "14px",
+    boxSizing: "border-box",
+  };
+  const ajusteBtn = {
+    background: "#1d4ed8",
+    color: "#fff",
+    padding: "9px 14px",
+    borderRadius: "4px",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "14px",
+  };
+
+  // ── URL dinámica del libro de reclamaciones ────────────
+  // Construida con nombre + apellido del usuario logeado.
+  // normalize("NFD") elimina tildes: "Fabricio" → "fabricio"
+  // En Fase 2 esta URL vendrá validada desde el backend.
+  const userSlug = `${user?.nombre || ""}${user?.apellido || ""}`
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "");
+  // Usa window.location.origin para funcionar en local (localhost:5173)
+  // y en producción (https://lrperu.com) sin cambios de código.
+  const userBookUrl = `${window.location.origin}/libro/${userSlug}`;
+
+  // Mapa de tamaños del widget
+  const widgetSizes = { "Pequeño": 60, "Mediano": 90, "Grande": 130 };
+  const currentWidgetHeight = widgetSizes[widgetSize];
+
+  // ── Descarga el QR generado como archivo PNG ──────────
+  const downloadQR = () => {
+    const canvas = qrRef.current?.querySelector("canvas");
+    if (!canvas) return;
+    const pngUrl = canvas
+      .toDataURL("image/png")
+      .replace("image/png", "image/octet-stream");
+    const link = document.createElement("a");
+    link.href = pngUrl;
+    link.download = `qr-libro-reclamaciones-${userSlug}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // ── Código HTML del widget generado dinámicamente ───────
+  const htmlCode = `<a href="${userBookUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; text-decoration: none; border: none; padding: 0; margin: 0;"><img src="${window.location.origin}/src/assets/img/libro.png" alt="Libro de Reclamaciones" style="height: ${currentWidgetHeight}px; width: auto; border: none; display: block;"></a>`;
+
+  const copyHtmlCode = async () => {
+    try {
+      await navigator.clipboard.writeText(htmlCode);
+      alert("Código copiado correctamente");
+    } catch (error) {
+      console.error("Error al copiar código:", error);
+      alert("No se pudo copiar el código");
+    }
+  };
+
+  const copyBookUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(userBookUrl);
+      alert("URL copiada correctamente");
+    } catch (error) {
+      console.error("Error al copiar URL:", error);
+      alert("No se pudo copiar la URL");
+    }
+  };
+
   const tabs = ["Pendientes", "Completado", "Integración", "Ajuste"];
 
   return (
@@ -117,7 +375,7 @@ function Dashboard() {
         <div>
           {/* Saludo personalizado */}
           <p style={{ fontSize: "15px", color: "#374151", marginBottom: "8px" }}>
-            Hola, {user?.nombre}
+            Hola, {user?.nombre} {user?.apellido}
           </p>
 
           {/* Título principal con razón social */}
@@ -199,143 +457,242 @@ function Dashboard() {
         {/* ── Contenido de cada pestaña ───────────────── */}
         <div style={{ padding: "20px" }}>
 
-          {/* PESTAÑA: Pendientes */}
-          {activeTab === "Pendientes" && (
-            <div>
-              {/* Tabla de reportes */}
-              <div style={{ overflowX: "auto" }}>
-                <table style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  background: "#fff",
-                  border: "1px solid #d1d5db",
-                  fontSize: "14px",
-                }}>
-                  <thead>
-                    <tr style={{ background: "#f9fafb" }}>
-                      {["N° Correlativo", "Cód. Seguimiento", "Cliente", "Tipo", "Monto", "Fecha", "Acciones"].map((h) => (
-                        <th key={h} style={{
-                          padding: "10px 12px",
-                          textAlign: "left",
-                          fontWeight: 600,
-                          color: "#374151",
-                          borderBottom: "1px solid #d1d5db",
-                          whiteSpace: "nowrap",
-                        }}>
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentReports.map((report) => (
-                      <tr key={report.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                        <td style={{ padding: "10px 12px" }}>{report.correlativo}</td>
-                        <td style={{ padding: "10px 12px", color: "#1e3a8a", fontWeight: 500 }}>{report.codigoSeguimiento}</td>
-                        <td style={{ padding: "10px 12px" }}>{report.cliente}</td>
-                        <td style={{ padding: "10px 12px" }}>
-                          <span style={{
-                            display: "inline-block",
-                            padding: "2px 10px",
-                            borderRadius: "999px",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            background: report.tipo === "Reclamo" ? "#fee2e2" : "#fef9c3",
-                            color:      report.tipo === "Reclamo" ? "#dc2626"  : "#854d0e",
-                          }}>
-                            {report.tipo}
-                          </span>
-                        </td>
-                        <td style={{ padding: "10px 12px" }}>{report.monto}</td>
-                        <td style={{ padding: "10px 12px", color: "#6b7280" }}>{report.fecha}</td>
-                        <td style={{ padding: "10px 12px" }}>
-                          {/* Botón Ver — no funcional aún */}
-                          <button style={{
-                            padding: "4px 14px",
-                            background: "#1e3a8a",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "6px",
-                            fontSize: "13px",
-                            cursor: "pointer",
-                          }}>
-                            Ver
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          {/* PESTAÑA: Pendientes — botón de acción: "Ver" */}
+          {activeTab === "Pendientes" && <ReportsTable actionLabel="Ver" />}
 
-              {/* ── Controles de paginación ── */}
-              <div style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: "16px",
-                marginTop: "16px",
-              }}>
-                {/* Anterior */}
-                <button
-                  onClick={() => setCurrentPage((p) => p - 1)}
-                  disabled={currentPage === 1}
-                  style={{
-                    padding: "6px 16px",
-                    borderRadius: "6px",
-                    border: "1px solid #d1d5db",
-                    background: currentPage === 1 ? "#f3f4f6" : "#fff",
-                    color: currentPage === 1 ? "#9ca3af" : "#374151",
-                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                    fontSize: "14px",
-                  }}
-                >
-                  ← Anterior
-                </button>
-
-                {/* Indicador de página */}
-                <span style={{ fontSize: "14px", color: "#374151" }}>
-                  Página {currentPage} de {totalPages}
-                </span>
-
-                {/* Siguiente */}
-                <button
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                  disabled={currentPage === totalPages}
-                  style={{
-                    padding: "6px 16px",
-                    borderRadius: "6px",
-                    border: "1px solid #d1d5db",
-                    background: currentPage === totalPages ? "#f3f4f6" : "#fff",
-                    color: currentPage === totalPages ? "#9ca3af" : "#374151",
-                    cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-                    fontSize: "14px",
-                  }}
-                >
-                  Siguiente →
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* PESTAÑA: Completado */}
-          {activeTab === "Completado" && (
-            <div style={{ textAlign: "center", padding: "40px", color: "#6b7280", fontSize: "18px" }}>
-              1
-            </div>
-          )}
+          {/* PESTAÑA: Completado — misma tabla, botón de acción: "Ver Respuesta" */}
+          {activeTab === "Completado" && <ReportsTable actionLabel="Ver Respuesta" />}
 
           {/* PESTAÑA: Integración */}
           {activeTab === "Integración" && (
-            <div style={{ textAlign: "center", padding: "40px", color: "#6b7280", fontSize: "18px" }}>
-              2
+            <div className="integration-panel">
+              <h2 className="integration-panel__title">Herramientas de Integración</h2>
+
+              {/* ── 1. Código QR ─────────────────────────────── */}
+              {/* La URL del libro NO se muestra aquí; aparece solo
+                  en la sección "URL directa" más abajo para no duplicarla. */}
+              <div className="integration-section">
+                <h3 className="integration-section__title">1. Código QR</h3>
+                <p className="integration-section__desc">
+                  Genera un código QR que enlace directamente a tu libro de reclamaciones.
+                </p>
+
+                {/* Fila de botones: Generar QR + Descargar QR (al lado) */}
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                  <button className="integration-btn" onClick={() => setShowQR(true)}>
+                    Generar QR
+                  </button>
+
+                  {/* Descargar QR aparece junto a Generar QR una vez que el QR fue generado */}
+                  {showQR && (
+                    <button
+                      onClick={downloadQR}
+                      style={{
+                        background: "#fff",
+                        color: "#1d4ed8",
+                        border: "1.5px solid #1d4ed8",
+                        borderRadius: "4px",
+                        padding: "8px 12px",
+                        fontSize: "14px",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                      }}
+                    >
+                      Descargar QR
+                    </button>
+                  )}
+                </div>
+
+                {/* QR visual — solo visible tras hacer clic en Generar QR */}
+                {showQR && (
+                  <div ref={qrRef} className="qr-box">
+                    <QRCodeCanvas
+                      value={userBookUrl}
+                      size={220}
+                      level="H"
+                      includeMargin={true}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* ── 2. Aviso para Tienda Física ───────────────── */}
+              <div className="integration-section">
+                <h3 className="integration-section__title">2. Aviso para Tienda Física</h3>
+                <p className="integration-section__desc">
+                  Genera un PDF con los datos de tu empresa y un código QR para imprimir y colocar en tu tienda.
+                </p>
+                {/* Abre /aviso/:slug en nueva pestaña — usa el mismo slug generado arriba */}
+                <button
+                  className="integration-btn"
+                  onClick={() => window.open(`/aviso/${userSlug}`, "_blank")}
+                >
+                  Generar PDF para Imprimir
+                </button>
+              </div>
+
+              {/* ── 3. Código HTML para tu Sitio Web ─────────── */}
+              <div className="integration-section">
+                <h3 className="integration-section__title">3. Código HTML para tu Sitio Web</h3>
+                <p className="integration-section__desc">
+                  Copia y pega este código en tu sitio web para mostrar el acceso a tu libro de reclamaciones.
+                </p>
+
+                <h4 className="integration-section__subtitle">Personalizar Widget</h4>
+
+                {/* Select funcional — cambia widgetSize y actualiza preview + htmlCode */}
+                <div style={{ marginBottom: "16px" }}>
+                  <label className="integration-label">Tamaño de la imagen:</label>
+                  <select
+                    className="integration-select"
+                    value={widgetSize}
+                    onChange={(e) => setWidgetSize(e.target.value)}
+                  >
+                    <option>Pequeño</option>
+                    <option>Mediano</option>
+                    <option>Grande</option>
+                  </select>
+                </div>
+
+                {/* Vista previa del widget — la imagen cambia de alto según el select.
+                    Está envuelta en <a> para que al hacer clic abra el libro público del usuario. */}
+                <p className="integration-label">Vista previa:</p>
+                <div className="integration-preview">
+                  <a href={userBookUrl} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={libroImg}
+                      alt="Libro de Reclamaciones"
+                      className="integration-book-img"
+                      style={{ height: `${currentWidgetHeight}px`, width: "auto" }}
+                      onError={(e) => { e.target.style.display = "none"; }}
+                    />
+                  </a>
+                </div>
+
+                {/* Textarea con el código HTML actualizado dinámicamente */}
+                <label className="integration-label">Código HTML:</label>
+                <textarea
+                  className="integration-html-textarea"
+                  readOnly
+                  value={htmlCode}
+                />
+
+                {/* Copia todo el contenido del textarea al portapapeles */}
+                <button className="integration-btn" style={{ marginBottom: "24px" }} onClick={copyHtmlCode}>Copiar código</button>
+
+                {/* URL directa — aparece solo aquí, no duplicada arriba */}
+                <p className="integration-label">URL directa de tu libro:</p>
+                <div className="integration-url-box">{userBookUrl}</div>
+
+                {/* Botón copiar URL — usa copyBookUrl con la URL dinámica del usuario */}
+                <button className="integration-btn" onClick={copyBookUrl}>Copiar URL</button>
+              </div>
             </div>
           )}
 
-          {/* PESTAÑA: Ajuste */}
+          {/* PESTAÑA: Ajuste — Configuración de la cuenta */}
           {activeTab === "Ajuste" && (
-            <div style={{ textAlign: "center", padding: "40px", color: "#6b7280", fontSize: "18px" }}>
-              3
+            <div style={{ padding: "10px 0" }}>
+              <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#111827", marginBottom: "28px" }}>
+                Configuración de la Cuenta
+              </h2>
+
+              {/* ── Fila superior: 2 columnas ──────────────────── */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px", marginBottom: "36px", alignItems: "start" }}>
+
+                {/* Columna izquierda: Datos del Usuario */}
+                <div>
+                  <h3 style={{ fontSize: "15px", fontWeight: 600, color: "#111827", marginBottom: "18px" }}>
+                    Datos del Usuario
+                  </h3>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "14px", color: "#374151", marginBottom: "4px" }}>Nombre</label>
+                      <input type="text" value={userForm.nombre} onChange={(e) => setUserForm({ ...userForm, nombre: e.target.value })} style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "14px", color: "#374151", marginBottom: "4px" }}>Apellidos</label>
+                      <input type="text" value={userForm.apellido} onChange={(e) => setUserForm({ ...userForm, apellido: e.target.value })} style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "14px", color: "#374151", marginBottom: "4px" }}>Correo Electrónico <span style={{ color: "#dc2626" }}>*</span></label>
+                      <input type="email" value={userForm.correo} onChange={(e) => setUserForm({ ...userForm, correo: e.target.value })} style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "14px", color: "#374151", marginBottom: "4px" }}>Web</label>
+                      <input type="text" value={userForm.web} onChange={(e) => setUserForm({ ...userForm, web: e.target.value })} style={inputStyle} />
+                    </div>
+                  </div>
+
+                  {/* Botón preparado para Fase 2: PUT /api/users/:id */}
+                  <button type="button" style={{ ...ajusteBtn, marginTop: "20px" }}>
+                    Actualizar Datos del Usuario
+                  </button>
+                </div>
+
+                {/* Columna derecha: Cambiar contraseña */}
+                {/* ⚠️ Solo visual. No guarda datos. Implementación real con
+                    hash bcrypt en backend (Fase 2). */}
+                <div>
+                  <h3 style={{ fontSize: "15px", fontWeight: 600, color: "#111827", marginBottom: "18px" }}>
+                    Cambiar contraseña
+                  </h3>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "14px", color: "#374151", marginBottom: "4px" }}>Antigua Contraseña</label>
+                      <input
+                        type="password"
+                        value={passwordForm.oldPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "14px", color: "#374151", marginBottom: "4px" }}>Nueva Contraseña</label>
+                      <input
+                        type="password"
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                        style={inputStyle}
+                      />
+                    </div>
+                  </div>
+
+                  {/* TODO Fase 2: validar oldPassword en backend, guardar newPassword con bcrypt */}
+                  <button type="button" style={{ ...ajusteBtn, marginTop: "20px" }}>
+                    Actualizar contraseña
+                  </button>
+                </div>
+
+              </div>
+
+              {/* ── Bloque 2: Datos del Negocio ────────────────── */}
+              <div style={{ marginBottom: "36px" }}>
+                <h3 style={{ fontSize: "15px", fontWeight: 600, color: "#111827", marginBottom: "18px" }}>
+                  Datos del Negocio
+                </h3>
+
+                <div style={{ display: "grid", gridTemplateColumns: "180px 320px", gap: "18px", alignItems: "center" }}>
+                  <label style={{ fontSize: "14px", color: "#374151" }}>Razón Social</label>
+                  <input type="text" value={businessForm.razon_social} onChange={(e) => setBusinessForm({ ...businessForm, razon_social: e.target.value })} style={inputStyle} />
+
+                  <label style={{ fontSize: "14px", color: "#374151" }}>RUC</label>
+                  <input type="text" value={businessForm.ruc} onChange={(e) => setBusinessForm({ ...businessForm, ruc: e.target.value })} style={inputStyle} />
+
+                  <label style={{ fontSize: "14px", color: "#374151" }}>Dirección</label>
+                  <input type="text" value={businessForm.direccion} onChange={(e) => setBusinessForm({ ...businessForm, direccion: e.target.value })} style={inputStyle} />
+
+                  <label style={{ fontSize: "14px", color: "#374151" }}>URL del Logo</label>
+                  <input type="text" value={businessForm.logo_url} onChange={(e) => setBusinessForm({ ...businessForm, logo_url: e.target.value })} style={inputStyle} />
+                </div>
+
+                {/* Botón preparado para Fase 2: PUT /api/users/:id (datos negocio) */}
+                <button type="button" style={{ ...ajusteBtn, marginTop: "20px" }}>
+                  Actualizar Datos del Negocio
+                </button>
+              </div>
             </div>
           )}
 

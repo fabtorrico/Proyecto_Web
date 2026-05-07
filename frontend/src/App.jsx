@@ -2,19 +2,23 @@ import { Routes, Route } from "react-router-dom";
 import Home               from "./pages/Home";
 import Login              from "./pages/Login";
 import PoliticaPrivacidad from "./pages/PoliticaPrivacidad";
-import Dashboard          from "./pages/Dashboard"; // Panel del usuario autenticado
+import Dashboard          from "./pages/Dashboard";
+// Vista pública del libro de reclamaciones — accesible por clientes externos
+import PublicClaimBook    from "./pages/PublicClaimBook";
+// Vista imprimible del aviso del libro para tienda física
+import PrintNotice        from "./pages/PrintNotice";
 
 function App() {
   return (
     <Routes>
-      {/* Ruta raíz: muestra la landing page */}
-      <Route path="/" element={<Home />} />
-      {/* Ruta /login: muestra el formulario de acceso */}
-      <Route path="/login" element={<Login />} />
-      {/* Ruta /politica-privacidad: muestra la política de privacidad */}
+      <Route path="/"                    element={<Home />} />
+      <Route path="/login"               element={<Login />} />
       <Route path="/politica-privacidad" element={<PoliticaPrivacidad />} />
-      {/* Ruta /dashboard: panel del usuario tras autenticarse */}
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/dashboard"           element={<Dashboard />} />
+      {/* Ruta pública única por empresa: /libro/:slug */}
+      <Route path="/libro/:slug"         element={<PublicClaimBook />} />
+      {/* Vista imprimible A4 del aviso: /aviso/:slug */}
+      <Route path="/aviso/:slug"         element={<PrintNotice />} />
     </Routes>
   );
 }

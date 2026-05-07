@@ -7,12 +7,6 @@ import pool from "../config/db.js";
 
 // ──────────────────────────────────────────────────────────
 // login
-// Recibe { correo, password } del body, valida contra la BD
-// y devuelve los datos del usuario (sin la contraseña).
-//
-// FASE 1: comparación directa de contraseña en texto plano.
-// FASE 2 (pendiente): reemplazar la comparación por bcrypt.compare()
-//   y emitir un JWT en lugar de devolver el objeto user completo.
 // ──────────────────────────────────────────────────────────
 export const login = async (req, res) => {
   try {
@@ -61,8 +55,39 @@ export const login = async (req, res) => {
     res.json({ user });
 
   } catch (error) {
-    // No exponer detalles internos en producción
     console.error("[authController] login error:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
+
+// ──────────────────────────────────────────────────────────
+// getUser
+// Devuelve los datos actualizados del usuario desde la BD.
+// Usado por el Dashboard para precargar los formularios de Ajuste.
+// Recibe: GET /api/user/:id
+// ──────────────────────────────────────────────────────────
+export const getUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validar que el id sea un número entero positivo
+    if (!id || isNaN(id) || parseInt(id) <= 0) {
+      return res.status(400).json({ error: "ID de usuario inválido" });
+    }
+
+    const [rows] = await pool.query(
+      "SELECT id, nombre, apellido, correo, web, razon_social, ruc, direccion, logo_url FROM users WHERE id = ?",
+      [parseInt(id)]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    res.json({ user: rows[0] });
+
+  } catch (error) {
+    console.error("[authController] getUser error:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 };
