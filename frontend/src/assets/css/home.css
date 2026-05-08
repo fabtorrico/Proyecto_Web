@@ -1222,6 +1222,18 @@ html {
   background-color: #1e40af;
 }
 
+.success-message {
+  color: #16a34a;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.error-message {
+  color: #dc2626;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
 /* Contenedor del canvas QR generado */
 .qr-box {
   margin-top: 15px;

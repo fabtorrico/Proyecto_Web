@@ -21,13 +21,16 @@ function PrintNotice() {
   // Nombre completo en mayúsculas para mostrar en el aviso
   const fullName = `${user?.nombre || ""} ${user?.apellido || ""}`.trim().toUpperCase();
 
-  // ── Slug: mismo algoritmo que Dashboard para garantizar consistencia ──
-  // Elimina tildes → minúsculas → sin espacios
-  const userSlug = `${user?.nombre || ""}${user?.apellido || ""}`
+  // Slug basado en razón social — mismo algoritmo que Dashboard para garantizar
+  // consistencia entre QR, URL inferior y rutas del frontend.
+  // Elimina tildes, caracteres especiales; reemplaza espacios por guiones.
+  const userSlug = (user?.razon_social || "empresa")
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "");
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
 
   // ── URL pública del libro del usuario ─────────────────
   // window.location.origin adapta automáticamente a localhost o producción
@@ -91,7 +94,7 @@ function PrintNotice() {
           marginBottom: "25px",
           letterSpacing: "0.5px",
         }}>
-          {fullName || "NOMBRE NO DISPONIBLE"}
+          {user?.razon_social?.toUpperCase() || "EMPRESA NO DISPONIBLE"}
         </p>
 
         {/* 4. Texto legal obligatorio */}

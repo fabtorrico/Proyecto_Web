@@ -241,6 +241,10 @@ function Dashboard() {
     oldPassword: "",
     newPassword: "",
   });
+  const [successMessage, setSuccessMessage] = useState("");
+  const [businessSuccessMessage, setBusinessSuccessMessage] = useState("");
+  const [passwordSuccessMessage, setPasswordSuccessMessage] = useState("");
+  const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
 
   // ── Carga de datos frescos desde la base de datos ────
   // Se ejecuta cuando el usuario está disponible.
@@ -306,13 +310,17 @@ function Dashboard() {
 
   // ── URL dinámica del libro de reclamaciones ────────────
   // Construida con nombre + apellido del usuario logeado.
-  // normalize("NFD") elimina tildes: "Fabricio" → "fabricio"
-  // En Fase 2 esta URL vendrá validada desde el backend.
-  const userSlug = `${user?.nombre || ""}${user?.apellido || ""}`
+  // Slug basado en razón social para URLs públicas limpias y representativas.
+  // normalize("NFD") + replace elimina tildes y diacríticos (ó→o, ñ→n, etc.).
+  // replace(/[^a-z0-9\s-]/g, "") descarta caracteres especiales.
+  // Los espacios se convierten en guiones para mayor legibilidad.
+  const userSlug = (user?.razon_social || "empresa")
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "");
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
   // Usa window.location.origin para funcionar en local (localhost:5173)
   // y en producción (https://lrperu.com) sin cambios de código.
   const userBookUrl = `${window.location.origin}/libro/${userSlug}`;
@@ -356,6 +364,162 @@ function Dashboard() {
     } catch (error) {
       console.error("Error al copiar URL:", error);
       alert("No se pudo copiar la URL");
+    }
+  };
+
+  // ── Actualiza datos del usuario en MySQL ────────────────
+  const handleUpdateUserProfile = async () => {
+    // Validación mínima en frontend (el backend también valida)
+    if (!user?.id) {
+      alert("No se encontró el usuario logueado");
+      return;
+    }
+    if (!userForm.nombre || !userForm.apellido || !userForm.correo) {
+      alert("Nombre, apellidos y correo son obligatorios");
+      return;
+    }
+
+    // ── Logs de depuración — eliminar en producción ──
+    console.log("user:", user);
+    console.log("userForm:", userForm);
+    console.log("URL:", `http://localhost:3000/api/users/${user.id}/profile`);
+
+    try {
+      const res = await fetch(`http://localhost:3000/api/users/${user.id}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre:   userForm.nombre,
+          apellido: userForm.apellido,
+          correo:   userForm.correo,
+          web:      userForm.web,
+        }),
+      });
+
+      console.log("status:", res.status);
+      const data = await res.json();
+      console.log("respuesta backend:", data);
+
+      if (!res.ok) {
+        alert(data.error || "No se pudieron actualizar los datos");
+        return;
+      }
+      // Actualizar localStorage con el usuario devuelto por el backend
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setSuccessMessage("Datos actualizados correctamente");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
+      console.error("ERROR FETCH updateUserProfile:", error);
+      alert("Error al actualizar datos del usuario");
+    }
+  };
+
+  // ── Actualizar datos del negocio ─────────────────────────
+  // Llama al backend PUT /api/users/:id/business.
+  // Valida RUC (11 dígitos) y logo_url (URL válida si se proporciona).
+  const handleUpdateBusinessData = async () => {
+    try {
+      if (!user?.id) {
+        alert("No se encontró el usuario logueado");
+        return;
+      }
+
+      // Raz\u00f3n social y RUC son obligatorios
+      if (!businessForm.razon_social || !businessForm.ruc) {
+        alert("Razón social y RUC son obligatorios");
+        return;
+      }
+
+      // Validación de RUC: exactamente 11 dígitos numéricos
+      const rucRegex = /^\d{11}$/;
+      if (!rucRegex.test(businessForm.ruc)) {
+        alert("El RUC debe tener exactamente 11 dígitos");
+        return;
+      }
+
+      // Llamada PUT al backend con los datos del negocio
+      const res = await fetch(`http://localhost:3000/api/users/${user.id}/business`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          razon_social: businessForm.razon_social,
+          ruc:          businessForm.ruc,
+          direccion:    businessForm.direccion,
+          logo_url:     businessForm.logo_url,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "No se pudieron actualizar los datos del negocio");
+        return;
+      }
+
+      // Actualizar localStorage con el usuario devuelto por el backend
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Mensaje visual de éxito; se limpia tras 3 segundos
+      setBusinessSuccessMessage("Datos del negocio actualizados correctamente");
+      setTimeout(() => setBusinessSuccessMessage(""), 3000);
+
+    } catch (error) {
+      console.error("Error actualizando datos del negocio:", error);
+      alert("Error al actualizar datos del negocio");
+    }
+  };
+
+  // ── Actualizar contraseña ────────────────────────────────
+  // Verifica la contraseña antigua en el backend antes de actualizar.
+  // La contraseña nunca se guarda en localStorage ni se muestra en consola.
+  // TODO Fase 2: migrar a bcrypt en backend.
+  const handleUpdatePassword = async () => {
+    try {
+      // Limpiar mensajes previos
+      setPasswordSuccessMessage("");
+      setPasswordErrorMessage("");
+
+      if (!user?.id) {
+        setPasswordErrorMessage("No se encontró el usuario logueado");
+        return;
+      }
+
+      // Validaciones en frontend (el backend también valida)
+      if (!passwordForm.oldPassword || !passwordForm.newPassword) {
+        setPasswordErrorMessage("Debe completar ambos campos de contraseña");
+        return;
+      }
+
+      if (passwordForm.newPassword.length < 6) {
+        setPasswordErrorMessage("La nueva contraseña debe tener al menos 6 caracteres");
+        return;
+      }
+
+      // Llamada PUT al backend — el backend verifica la contraseña antigua
+      const res = await fetch(`http://localhost:3000/api/users/${user.id}/password`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          oldPassword: passwordForm.oldPassword,
+          newPassword: passwordForm.newPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setPasswordErrorMessage(data.error || "No se pudo actualizar la contraseña");
+        return;
+      }
+
+      // Limpiar inputs y mostrar mensaje de éxito
+      setPasswordForm({ oldPassword: "", newPassword: "" });
+      setPasswordSuccessMessage("Contraseña actualizada correctamente");
+      setTimeout(() => setPasswordSuccessMessage(""), 3000);
+
+    } catch (error) {
+      console.error("Error actualizando contraseña:", error);
+      setPasswordErrorMessage("Error al actualizar contraseña");
     }
   };
 
@@ -625,10 +789,13 @@ function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Botón preparado para Fase 2: PUT /api/users/:id */}
-                  <button type="button" style={{ ...ajusteBtn, marginTop: "20px" }}>
+                  {/* Llama al backend PUT /api/users/:id/profile y actualiza localStorage */}
+                  <button type="button" style={{ ...ajusteBtn, marginTop: "20px" }} onClick={handleUpdateUserProfile}>
                     Actualizar Datos del Usuario
                   </button>
+                  {successMessage && (
+                    <p className="success-message">{successMessage}</p>
+                  )}
                 </div>
 
                 {/* Columna derecha: Cambiar contraseña */}
@@ -661,9 +828,17 @@ function Dashboard() {
                   </div>
 
                   {/* TODO Fase 2: validar oldPassword en backend, guardar newPassword con bcrypt */}
-                  <button type="button" style={{ ...ajusteBtn, marginTop: "20px" }}>
+                  <button type="button" style={{ ...ajusteBtn, marginTop: "20px" }} onClick={handleUpdatePassword}>
                     Actualizar contraseña
                   </button>
+                  {/* Mensaje visual de éxito: desaparece tras 3 segundos */}
+                  {passwordSuccessMessage && (
+                    <p className="success-message">{passwordSuccessMessage}</p>
+                  )}
+                  {/* Mensaje de error: permanece hasta que el usuario corrige */}
+                  {passwordErrorMessage && (
+                    <p className="error-message">{passwordErrorMessage}</p>
+                  )}
                 </div>
 
               </div>
@@ -688,10 +863,14 @@ function Dashboard() {
                   <input type="text" value={businessForm.logo_url} onChange={(e) => setBusinessForm({ ...businessForm, logo_url: e.target.value })} style={inputStyle} />
                 </div>
 
-                {/* Botón preparado para Fase 2: PUT /api/users/:id (datos negocio) */}
-                <button type="button" style={{ ...ajusteBtn, marginTop: "20px" }}>
+                {/* PUT /api/users/:id/business — actualiza datos del negocio en MySQL */}
+                <button type="button" style={{ ...ajusteBtn, marginTop: "20px" }} onClick={handleUpdateBusinessData}>
                   Actualizar Datos del Negocio
                 </button>
+                {/* Mensaje visual de éxito; desaparece tras 3 segundos */}
+                {businessSuccessMessage && (
+                  <p className="success-message">{businessSuccessMessage}</p>
+                )}
               </div>
             </div>
           )}

@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 3000;
 // En producción reemplazar origin por el dominio real
 app.use(cors({
   origin: process.env.CORS_ORIGIN || "http://localhost:5173",
-  methods: ["GET", "POST"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
 
 // Parsea el body de los requests como JSON
