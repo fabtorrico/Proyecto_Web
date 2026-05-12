@@ -1267,6 +1267,14 @@ html {
   text-decoration: underline;
 }
 
+/* Mensaje de error de validación visible en el formulario de reclamo */
+.claim-error-message {
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 12px 0;
+}
+
 /* Contenedor del canvas QR generado */
 .qr-box {
   margin-top: 15px;

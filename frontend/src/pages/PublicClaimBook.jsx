@@ -109,7 +109,8 @@ function PublicClaimBook() {
 
     monto_reclamado: "",
     descripcion_producto_servicio: "",
-    descripcion_reclamo: "",
+    // detalle_reclamo: texto libre del consumidor explicando su reclamo o queja
+    detalle_reclamo: "",
 
     // Objeto Date para el DatePicker; en Fase 2 se serializa a ISO string
     fecha_compra_consumo: null,
@@ -170,9 +171,109 @@ function PublicClaimBook() {
   }, []);
 
   // ── Estado del envío ─────────────────────────────────────
-  const [submitLoading, setSubmitLoading]   = useState(false);
-  const [submitError,   setSubmitError]     = useState("");
-  const [submitResult,  setSubmitResult]    = useState(null); // { correlativo, codigo_seguimiento }
+  const [submitLoading,      setSubmitLoading]      = useState(false);
+  const [submitError,        setSubmitError]        = useState("");
+  // claimSubmitted: controla si se oculta el formulario y se muestra la confirmación
+  // submittedClaimInfo: guarda correlativo y código devueltos por el backend
+  // No se usa alert() — la confirmación es una pantalla dentro del mismo componente
+  const [claimSubmitted,     setClaimSubmitted]     = useState(false);
+  const [submittedClaimInfo, setSubmittedClaimInfo] = useState({ correlativo: "", codigo_seguimiento: "" });
+  // Mensajes visuales de validación frontend (no usan alert())
+  const [claimErrorMessage,  setClaimErrorMessage]  = useState("");
+  const [claimSuccessMessage, setClaimSuccessMessage] = useState("");
+
+  // ── Validación de campos obligatorios (frontend) ──────────
+  // Valida todos los campos marcados con (*) antes de llamar al backend.
+  // El backend también valida — esta función es la primera línea de defensa.
+  // Retorna un string de error o null si todo está correcto.
+
+  // ── Validación dinámica del número de documento ───────────
+  // La longitud y formato aceptado cambia según el tipo seleccionado.
+  // El backend también valida esto antes de guardar en BD.
+  const validateDocumentNumber = () => {
+    const tipo   = claimForm.tipo_documento;
+    const numero = claimForm.numero_documento.trim();
+
+    if (!tipo || !numero) return false;
+
+    if (tipo === "DNI")                   return /^\d{8}$/.test(numero);
+    if (tipo === "CE")                    return /^[A-Za-z0-9]{9,12}$/.test(numero);
+    if (tipo === "PASAPORTE")             return /^[A-Za-z0-9]{6,12}$/.test(numero);
+    if (tipo === "RUC")                   return /^\d{11}$/.test(numero);
+
+    return false;
+  };
+
+  // Devuelve el mensaje específico según el tipo de documento seleccionado.
+  const getDocumentErrorMessage = () => {
+    const tipo = claimForm.tipo_documento;
+
+    if (tipo === "DNI")       return "El DNI debe tener exactamente 8 dígitos";
+    if (tipo === "CE")        return "El Carné de Extranjería debe tener entre 9 y 12 caracteres";
+    if (tipo === "PASAPORTE") return "El Pasaporte debe tener entre 6 y 12 caracteres";
+    if (tipo === "RUC")       return "El RUC debe tener exactamente 11 dígitos";
+
+    return "Debe seleccionar un tipo de documento válido";
+  };
+
+  const validateClaimForm = () => {
+    const requiredFields = [
+      "nombre",
+      "primer_apellido",
+      "segundo_apellido",
+      "tipo_documento",
+      "numero_documento",
+      "celular",
+      "departamento",
+      "provincia",
+      "distrito",
+      "direccion",
+      "correo_electronico",
+      "es_menor_edad",
+      "tipo_reclamo",
+      "tipo_consumo",
+      "monto_reclamado",
+      "descripcion_producto_servicio",
+      // detalle_reclamo: campo obligatorio — texto del reclamo o queja del consumidor
+      "detalle_reclamo",
+      "pedido_cliente",
+    ];
+
+    for (const field of requiredFields) {
+      const value = claimForm[field];
+      // Considera vacío: null, undefined o string en blanco
+      if (value === null || value === undefined || String(value).trim() === "") {
+        return "Debe completar todos los campos obligatorios marcados con (*)";
+      }
+    }
+
+    // Validación de celular: exactamente 9 dígitos numéricos.
+    // El backend también aplica esta regla antes de guardar.
+    const celularRegex = /^\d{9}$/;
+    if (!celularRegex.test(claimForm.celular)) {
+      return "El celular debe tener exactamente 9 dígitos";
+    }
+
+    // Validación de correo electrónico: formato básico con @ y dominio.
+    // El backend también valida antes de guardar.
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(claimForm.correo_electronico)) {
+      return "Debe ingresar un correo electrónico válido";
+    }
+
+    // Validación dinámica del número de documento según tipo seleccionado.
+    // Las reglas varían: DNI (8 dígitos), RUC (11 dígitos), CE/Pasaporte (alfanumérico).
+    if (!validateDocumentNumber()) {
+      return getDocumentErrorMessage();
+    }
+
+    // La política de privacidad se valida por separado para dar mensaje específico
+    if (!claimForm.acepta_politica) {
+      return "Debe aceptar la Política de Privacidad";
+    }
+
+    return null; // sin errores
+  };
 
   // ── Handler de envío ─────────────────────────────────────
   // Cómo se arma el payload:
@@ -185,26 +286,32 @@ function PublicClaimBook() {
   //
   // correlativo y codigo_seguimiento los genera el backend, no el frontend.
   const handleSubmitClaim = async () => {
+    // Limpiar mensajes anteriores en cada intento
+    setClaimErrorMessage("");
+    setClaimSuccessMessage("");
+    setSubmitError("");
+
+    // Validación frontend: campos obligatorios + política de privacidad.
+    // Los mensajes se muestran dentro del formulario (sin alert()).
+    const validationError = validateClaimForm();
+    if (validationError) {
+      setClaimErrorMessage(validationError);
+      return;
+    }
+
+    // Validar captcha matemático
+    if (parseInt(claimForm.captcha_respuesta) !== captchaAnswer) {
+      setClaimErrorMessage("La respuesta de verificación es incorrecta.");
+      return;
+    }
+
     try {
       // Verificar que existe la empresa asociada (user_id desde localStorage)
       if (!user?.id) {
-        alert("No se encontró la empresa asociada al libro");
+        setClaimErrorMessage("No se encontró la empresa asociada al libro");
         return;
       }
 
-      // Validar política de privacidad en frontend como primera línea de defensa
-      if (!claimForm.acepta_politica) {
-        alert("Debe aceptar la Política de Privacidad");
-        return;
-      }
-
-      // Validar captcha matemático antes de llamar al backend
-      if (parseInt(claimForm.captcha_respuesta) !== captchaAnswer) {
-        setSubmitError("La respuesta de verificación es incorrecta.");
-        return;
-      }
-
-      setSubmitError("");
       setSubmitLoading(true);
 
       // Payload: todos los campos del formulario salvo captcha_respuesta.
@@ -237,7 +344,8 @@ function PublicClaimBook() {
 
         monto_reclamado:              claimForm.monto_reclamado,
         descripcion_producto_servicio: claimForm.descripcion_producto_servicio,
-        descripcion_reclamo:           claimForm.descripcion_reclamo,
+        // detalle_reclamo se guarda en claims.detalle_reclamo (columna ya existe en BD)
+        detalle_reclamo:               claimForm.detalle_reclamo,
 
         // Serializar Date a YYYY-MM-DD o enviar null
         fecha_compra_consumo: claimForm.fecha_compra_consumo
@@ -264,23 +372,79 @@ function PublicClaimBook() {
       const data = await res.json();
 
       if (!res.ok) {
-        setSubmitError(data.error || "No se pudo registrar el reclamo");
+        // Error devuelto por el backend (validación, empresa no encontrada, etc.)
+        setClaimErrorMessage(data.error || "No se pudo registrar el reclamo");
         return;
       }
 
-      // Mostrar confirmación con los datos generados por el backend
-      setSubmitResult({
+      // Guardar los datos generados por el backend y mostrar pantalla de confirmación.
+      // correlativo y codigo_seguimiento vienen del backend, nunca del frontend.
+      // No se usa alert() porque esta es una confirmación final de cara al usuario.
+      setSubmittedClaimInfo({
         correlativo:        data.correlativo,
         codigo_seguimiento: data.codigo_seguimiento,
       });
+      setClaimSubmitted(true);
 
     } catch (error) {
       console.error("Error enviando reclamo:", error);
-      setSubmitError("Error al enviar reclamo. Verifica tu conexión.");
+      setClaimErrorMessage("Error al enviar reclamo. Verifica tu conexión.");
     } finally {
       setSubmitLoading(false);
     }
   };
+
+  // ── Pantalla de confirmación ─────────────────────────────────
+  // Se muestra cuando el backend confirmó el guardado exitoso.
+  // Oculta completamente el formulario; correlativo y código vienen del backend.
+  if (claimSubmitted) {
+    return (
+      <div style={{ background: "#f3f4f6", minHeight: "100vh", fontFamily: "sans-serif" }}>
+        <div style={{ maxWidth: "720px", margin: "60px auto", padding: "0 16px" }}>
+          <div style={{
+            background: "#d1fae5",
+            borderLeft: "5px solid #16a34a",
+            borderRadius: "8px",
+            padding: "24px",
+            boxShadow: "0 1px 6px rgba(0,0,0,0.08)",
+          }}>
+            <p style={{ color: "#166534", fontSize: "16px", fontWeight: 500, margin: 0 }}>
+              Tu reclamo ha sido registrado correctamente con el número correlativo:{" "}
+              <strong>{submittedClaimInfo.correlativo}</strong>.
+            </p>
+
+            <div style={{
+              background: "#fff",
+              border: "1px dashed #2563eb",
+              borderRadius: "4px",
+              padding: "16px",
+              marginTop: "16px",
+              width: "fit-content",
+            }}>
+              <p style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#374151",
+                textTransform: "uppercase",
+                margin: "0 0 8px 0",
+              }}>
+                Código de Seguimiento (para consultas):
+              </p>
+              <p style={{
+                fontSize: "22px",
+                fontWeight: 800,
+                color: "#2563eb",
+                letterSpacing: "1px",
+                margin: 0,
+              }}>
+                {submittedClaimInfo.codigo_seguimiento}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background: "#f3f4f6", minHeight: "100vh", padding: "30px 16px", fontFamily: "sans-serif" }}>
@@ -322,47 +486,6 @@ function PublicClaimBook() {
           Libro de Reclamaciones
         </h1>
 
-        {/* ── Pantalla de confirmación — reemplaza el formulario tras envío exitoso ── */}
-        {submitResult ? (
-          <div style={{
-            background: "#fff",
-            borderRadius: "8px",
-            padding: "40px 32px",
-            boxShadow: "0 1px 6px rgba(0,0,0,0.1)",
-            textAlign: "center",
-            marginBottom: "40px",
-          }}>
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}>✅</div>
-            <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#15803d", marginBottom: "8px" }}>
-              ¡Reclamo Registrado Exitosamente!
-            </h2>
-            <p style={{ color: "#374151", fontSize: "15px", marginBottom: "28px" }}>
-              Hemos recibido tu reclamo. Guarda estos datos para hacer seguimiento.
-            </p>
-            <div style={{
-              display: "inline-block",
-              background: "#f0fdf4",
-              border: "1px solid #bbf7d0",
-              borderRadius: "8px",
-              padding: "20px 32px",
-              textAlign: "left",
-              marginBottom: "28px",
-            }}>
-              <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px" }}>N° de Correlativo</p>
-              <p style={{ fontSize: "18px", fontWeight: 800, color: "#111827", letterSpacing: "1px", marginBottom: "16px" }}>
-                {submitResult.correlativo}
-              </p>
-              <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px" }}>Código de Seguimiento</p>
-              <p style={{ fontSize: "24px", fontWeight: 900, color: "#1d4ed8", letterSpacing: "3px" }}>
-                {submitResult.codigo_seguimiento}
-              </p>
-            </div>
-            <p style={{ fontSize: "13px", color: "#6b7280" }}>
-              El proveedor tiene hasta <strong>15 días hábiles</strong> para responder a tu reclamo.
-            </p>
-          </div>
-        ) : (
-          <>
         {/* ── SECCIÓN 1: Identificación del Consumidor ─────── */}
         <div style={{
           background: "#fff",
@@ -520,8 +643,8 @@ function PublicClaimBook() {
           <Field label="Detalle del Reclamo o Queja" required>
             <textarea
               style={{ ...inputStyle, minHeight: "90px", resize: "vertical" }}
-              name="descripcion_reclamo"
-              value={claimForm.descripcion_reclamo}
+              name="detalle_reclamo"
+              value={claimForm.detalle_reclamo}
               onChange={handleClaimChange}
             />
           </Field>
@@ -610,21 +733,11 @@ function PublicClaimBook() {
             />
           </div>
 
-          {/* Mensaje de error de validación */}
-          {submitError && (
-            <div style={{
-              background: "#fef2f2",
-              border: "1px solid #fca5a5",
-              color: "#b91c1c",
-              borderRadius: "6px",
-              padding: "10px 16px",
-              marginBottom: "16px",
-              maxWidth: "480px",
-              margin: "0 auto 16px",
-              fontSize: "14px",
-            }}>
-              {submitError}
-            </div>
+          {/* Mensaje de error de validación frontend y backend — visible dentro del formulario, sin alert() */}
+          {claimErrorMessage && (
+            <p className="claim-error-message">
+              {claimErrorMessage}
+            </p>
           )}
 
           {/* Botón enviar */}
@@ -664,9 +777,6 @@ function PublicClaimBook() {
             </li>
           </ul>
         </div>
-
-        </>
-        )}
 
       </div>
     </div>

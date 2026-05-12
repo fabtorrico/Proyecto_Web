@@ -74,6 +74,8 @@ CREATE TABLE claims (
   descripcion_producto_servicio TEXT NOT NULL,
 
   fecha_compra_consumo DATE,
+  
+  detalle_reclamo TEXT NOT NULL,
 
   archivo_adjunto VARCHAR(255),
 

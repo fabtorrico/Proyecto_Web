@@ -114,7 +114,8 @@ export const createClaim = async (req, res) => {
 
       monto_reclamado,
       descripcion_producto_servicio,
-      descripcion_reclamo,
+      // detalle_reclamo: texto del reclamo/queja — se guarda en claims.detalle_reclamo
+      detalle_reclamo,
       fecha_compra_consumo,
 
       archivo_adjunto,
@@ -125,28 +126,38 @@ export const createClaim = async (req, res) => {
     } = req.body;
 
     // ── Validaciones obligatorias ──────────────────────────
-    if (
-      !user_id           ||
-      !nombre            ||
-      !primer_apellido   ||
-      !segundo_apellido  ||
-      !tipo_documento    ||
-      !numero_documento  ||
-      !celular           ||
-      !departamento      ||
-      !provincia         ||
-      !distrito          ||
-      !direccion         ||
-      !correo_electronico ||
-      !es_menor_edad     ||
-      !tipo_reclamo      ||
-      !tipo_consumo      ||
-      !monto_reclamado   ||
-      !descripcion_producto_servicio ||
-      !descripcion_reclamo           ||
-      !pedido_cliente
-    ) {
-      return res.status(400).json({ error: "Faltan campos obligatorios" });
+    // Se itera sobre cada campo para devolver cuál está faltando,
+    // lo que facilita depuración tanto en desarrollo como en producción.
+    const requiredFields = {
+      user_id,
+      nombre,
+      primer_apellido,
+      segundo_apellido,
+      tipo_documento,
+      numero_documento,
+      celular,
+      departamento,
+      provincia,
+      distrito,
+      direccion,
+      correo_electronico,
+      es_menor_edad,
+      tipo_reclamo,
+      tipo_consumo,
+      descripcion_producto_servicio,
+      detalle_reclamo,
+      pedido_cliente,
+    };
+
+    for (const [field, value] of Object.entries(requiredFields)) {
+      if (value === null || value === undefined || String(value).trim() === "") {
+        return res.status(400).json({ error: `Faltan campos obligatorios (${field})` });
+      }
+    }
+
+    // monto_reclamado se valida aparte porque puede ser 0 (válido como número)
+    if (monto_reclamado === null || monto_reclamado === undefined || String(monto_reclamado).trim() === "") {
+      return res.status(400).json({ error: "Faltan campos obligatorios (monto_reclamado)" });
     }
 
     // Validar formato de correo electrónico
@@ -212,7 +223,7 @@ export const createClaim = async (req, res) => {
 
         monto_reclamado,
         descripcion_producto_servicio,
-        descripcion_reclamo,
+        detalle_reclamo,
         fecha_compra_consumo,
 
         archivo_adjunto,
@@ -262,7 +273,7 @@ export const createClaim = async (req, res) => {
 
         monto_reclamado,
         descripcion_producto_servicio,
-        descripcion_reclamo,
+        detalle_reclamo,
         fecha_compra_consumo || null,
 
         archivo_adjunto || "",
