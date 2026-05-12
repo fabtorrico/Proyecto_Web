@@ -295,3 +295,68 @@ export const createClaim = async (req, res) => {
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
+
+// ── getPendingClaims ────────────────────────────────────
+// Devuelve los reclamos con estado PENDIENTE del usuario logueado.
+// Ruta protegida con JWT — user_id se extrae del token, NO del body.
+// Solo devuelve reclamos de esa empresa; nunca de otros usuarios.
+export const getPendingClaims = async (req, res) => {
+  try {
+    // user_id viene del token JWT decodificado por verifyToken
+    const userId = req.user.id;
+
+    const [rows] = await pool.query(
+      `SELECT
+         id,
+         correlativo,
+         codigo_seguimiento,
+         CONCAT(nombre, ' ', primer_apellido, ' ', segundo_apellido) AS cliente,
+         tipo_reclamo,
+         monto_reclamado,
+         created_at
+       FROM claims
+       WHERE user_id = ?
+         AND UPPER(estado) = 'PENDIENTE'
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+
+    return res.json({ claims: rows });
+
+  } catch (error) {
+    console.error("[claimController] getPendingClaims error:", error);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
+
+// ── getCompletedClaims ────────────────────────────────
+// Devuelve los reclamos con estado COMPLETADO del usuario logueado.
+// Ruta protegida con JWT — user_id se extrae del token, NO del body.
+// Solo devuelve reclamos de esa empresa; nunca de otros usuarios.
+export const getCompletedClaims = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [rows] = await pool.query(
+      `SELECT
+         id,
+         correlativo,
+         codigo_seguimiento,
+         CONCAT(nombre, ' ', primer_apellido, ' ', segundo_apellido) AS cliente,
+         tipo_reclamo,
+         monto_reclamado,
+         created_at
+       FROM claims
+       WHERE user_id = ?
+         AND UPPER(estado) = 'COMPLETADO'
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+
+    return res.json({ claims: rows });
+
+  } catch (error) {
+    console.error("[claimController] getCompletedClaims error:", error);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+};

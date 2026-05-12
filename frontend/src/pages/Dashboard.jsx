@@ -54,16 +54,27 @@ const getExpirationDate = () => {
 };
 
 // ─────────────────────────────────────────────────────────
-// ReportsTable — tabla reutilizable de reportes con paginación.
-// La única diferencia entre pestañas es el texto del botón en Acciones.
-// Cada instancia maneja su propio estado de página de forma independiente.
-function ReportsTable({ actionLabel }) {
+// ReportsTable — tabla de reportes con paginación.
+// Recibe datos reales desde el backend vía props.
+// reports: array de reclamos; loading/error: estados de carga.
+// emptyMessage: texto cuando no hay registros (muestra tabla con cabeceras).
+function ReportsTable({ reports, loading, error, actionLabel, emptyMessage = "No hay reclamos." }) {
   const [page, setPage] = useState(1);
-  const totalPages     = Math.ceil(mockReports.length / ITEMS_PER_PAGE);
-  const visibleReports = mockReports.slice(
+
+  // Reiniciar página cuando cambian los datos
+  const totalPages     = Math.max(1, Math.ceil(reports.length / ITEMS_PER_PAGE));
+  const visibleReports = reports.slice(
     (page - 1) * ITEMS_PER_PAGE,
     page * ITEMS_PER_PAGE
   );
+
+  // ── Estados visuales de carga ──────────────────────────
+  if (loading) {
+    return <p style={{ padding: "20px", color: "#6b7280" }}>Cargando reclamos...</p>;
+  }
+  if (error) {
+    return <p style={{ padding: "20px", color: "#dc2626" }}>{error}</p>;
+  }
 
   return (
     <div>
@@ -74,9 +85,8 @@ function ReportsTable({ actionLabel }) {
           background: "#fff",
           border: "1px solid #d1d5db",
           fontSize: "14px",
-          tableLayout: "fixed",   /* anchos fijos → misma distribución en ambas pestañas */
+          tableLayout: "fixed",
         }}>
-          {/* Anchos de columna explícitos para que no varíen con el contenido */}
           <colgroup>
             <col style={{ width: "10%" }} />   {/* N° Correlativo */}
             <col style={{ width: "16%" }} />   {/* Cód. Seguimiento */}
@@ -103,11 +113,20 @@ function ReportsTable({ actionLabel }) {
             </tr>
           </thead>
           <tbody>
-            {visibleReports.map((report) => (
-              <tr key={report.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                <td style={{ padding: "10px 12px" }}>{report.correlativo}</td>
-                <td style={{ padding: "10px 12px", color: "#1e3a8a", fontWeight: 500 }}>{report.codigoSeguimiento}</td>
-                <td style={{ padding: "10px 12px" }}>{report.cliente}</td>
+            {/* Si no hay registros: fila que ocupa todas las columnas */}
+            {visibleReports.length === 0 ? (
+              <tr>
+                <td colSpan="7" style={{ padding: "20px 12px", color: "#6b7280", textAlign: "center" }}>
+                  {emptyMessage}
+                </td>
+              </tr>
+            ) : (
+            /* Mapeo de datos reales desde claims — reemplaza mock data */
+            visibleReports.map((claim) => (
+              <tr key={claim.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                <td style={{ padding: "10px 12px" }}>{claim.correlativo}</td>
+                <td style={{ padding: "10px 12px", color: "#1e3a8a", fontWeight: 500 }}>{claim.codigo_seguimiento}</td>
+                <td style={{ padding: "10px 12px" }}>{claim.cliente}</td>
                 <td style={{ padding: "10px 12px" }}>
                   <span style={{
                     display: "inline-block",
@@ -115,16 +134,19 @@ function ReportsTable({ actionLabel }) {
                     borderRadius: "999px",
                     fontSize: "12px",
                     fontWeight: 600,
-                    background: report.tipo === "Reclamo" ? "#fee2e2" : "#fef9c3",
-                    color:      report.tipo === "Reclamo" ? "#dc2626"  : "#854d0e",
+                    background: claim.tipo_reclamo === "RECLAMO" ? "#fee2e2" : "#fef9c3",
+                    color:      claim.tipo_reclamo === "RECLAMO" ? "#dc2626"  : "#854d0e",
                   }}>
-                    {report.tipo}
+                    {claim.tipo_reclamo}
                   </span>
                 </td>
-                <td style={{ padding: "10px 12px" }}>{report.monto}</td>
-                <td style={{ padding: "10px 12px", color: "#6b7280" }}>{report.fecha}</td>
+                {/* Formato: S/ 120.00 */}
+                <td style={{ padding: "10px 12px" }}>S/ {Number(claim.monto_reclamado).toFixed(2)}</td>
+                {/* Formato: YYYY-MM-DD */}
+                <td style={{ padding: "10px 12px", color: "#6b7280" }}>
+                  {new Date(claim.created_at).toISOString().split("T")[0]}
+                </td>
                 <td style={{ padding: "10px 12px" }}>
-                  {/* Botón de acción — texto varía según la pestaña */}
                   <button style={{
                     padding: "4px 14px",
                     background: "#1e3a8a",
@@ -138,12 +160,13 @@ function ReportsTable({ actionLabel }) {
                   </button>
                 </td>
               </tr>
-            ))}
+            ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* ── Controles de paginación ── */}
+      {/* ── Controles de paginación con datos reales ── */}
       <div style={{
         display: "flex",
         justifyContent: "center",
@@ -277,6 +300,87 @@ function Dashboard() {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
   };
+
+  // ── Reclamos pendientes — datos reales desde MySQL ────────
+  // Se cargan con JWT; el backend filtra por user_id del token.
+  // Reemplaza la mock data anterior de mockReports.
+  const [pendingClaims,  setPendingClaims]  = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [pendingError,   setPendingError]   = useState("");
+
+  const fetchPendingClaims = async () => {
+    try {
+      setPendingLoading(true);
+      setPendingError("");
+
+      const res  = await fetch("http://localhost:3000/api/claims/pending", {
+        method:  "GET",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setPendingError(data.error || "No se pudieron cargar los reclamos");
+        return;
+      }
+
+      // Guardar solo los reclamos de esta empresa (filtro ya aplicado en backend)
+      setPendingClaims(data.claims || []);
+    } catch (error) {
+      console.error("Error cargando reclamos pendientes:", error);
+      setPendingError("Error al cargar reclamos pendientes");
+    } finally {
+      setPendingLoading(false);
+    }
+  };
+
+  // Cargar reclamos al entrar a la pestaña Pendientes
+  useEffect(() => {
+    if (activeTab === "Pendientes") {
+      fetchPendingClaims();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  // ── Reclamos completados — datos reales desde MySQL ────────
+  // Carga real con JWT; filtro estado COMPLETADO aplicado en backend.
+  // Futura función "Ver Respuesta" operará sobre estos registros.
+  const [completedClaims,  setCompletedClaims]  = useState([]);
+  const [completedLoading, setCompletedLoading] = useState(false);
+  const [completedError,   setCompletedError]   = useState("");
+
+  const fetchCompletedClaims = async () => {
+    try {
+      setCompletedLoading(true);
+      setCompletedError("");
+
+      const res  = await fetch("http://localhost:3000/api/claims/completed", {
+        method:  "GET",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setCompletedError(data.error || "No se pudieron cargar los reclamos completados");
+        return;
+      }
+
+      setCompletedClaims(data.claims || []);
+    } catch (error) {
+      console.error("Error cargando reclamos completados:", error);
+      setCompletedError("Error al cargar reclamos completados");
+    } finally {
+      setCompletedLoading(false);
+    }
+  };
+
+  // Cargar reclamos al entrar a la pestaña Completado
+  useEffect(() => {
+    if (activeTab === "Completado") {
+      fetchCompletedClaims();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   // ── Logout ────────────────────────────────────────────
   const handleLogout = () => {    // Eliminar token JWT y datos del usuario al cerrar sesión
@@ -636,10 +740,25 @@ function Dashboard() {
         <div style={{ padding: "20px" }}>
 
           {/* PESTAÑA: Pendientes — botón de acción: "Ver" */}
-          {activeTab === "Pendientes" && <ReportsTable actionLabel="Ver" />}
+          {activeTab === "Pendientes" && (
+            <ReportsTable
+              reports={pendingClaims}
+              loading={pendingLoading}
+              error={pendingError}
+              actionLabel="Ver"
+            />
+          )}
 
-          {/* PESTAÑA: Completado — misma tabla, botón de acción: "Ver Respuesta" */}
-          {activeTab === "Completado" && <ReportsTable actionLabel="Ver Respuesta" />}
+          {/* PESTAÑA: Completado — carga real desde backend, estado = COMPLETADO */}
+          {activeTab === "Completado" && (
+            <ReportsTable
+              reports={completedClaims}
+              loading={completedLoading}
+              error={completedError}
+              actionLabel="Ver Respuesta"
+              emptyMessage="No hay reclamos completados."
+            />
+          )}
 
           {/* PESTAÑA: Integración */}
           {activeTab === "Integración" && (
