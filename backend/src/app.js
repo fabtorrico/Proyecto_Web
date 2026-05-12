@@ -6,7 +6,8 @@
 import express from "express";
 import cors    from "cors";
 import dotenv  from "dotenv";
-import authRoutes from "./routes/authRoutes.js";
+import authRoutes  from "./routes/authRoutes.js";
+import claimRoutes from "./routes/claimRoutes.js";
 
 // Carga las variables de entorno desde backend/.env
 dotenv.config();
@@ -30,6 +31,9 @@ app.use(express.json());
 
 // Todas las rutas de autenticación bajo /api
 app.use("/api", authRoutes);
+
+// Rutas públicas del libro de reclamaciones (sin JWT)
+app.use("/api", claimRoutes);
 
 // ── Healthcheck básico ────────────────────────────────────
 app.get("/", (_req, res) => {

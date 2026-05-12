@@ -4,6 +4,11 @@
 // ============================================================
 
 import pool from "../config/db.js";
+import bcrypt from "bcrypt";
+// JWT (JSON Web Token): estándar para transmitir información verificable entre partes.
+// El token se firma con JWT_SECRET y expira tras 7 días.
+// NO se incluyen datos sensibles (password) en el payload del token.
+import jwt from "jsonwebtoken";
 
 // ──────────────────────────────────────────────────────────
 // login
@@ -37,22 +42,39 @@ export const login = async (req, res) => {
 
     const user = rows[0];
 
-    // ── FASE 1: comparación en texto plano ──
-    // TODO FASE 2: reemplazar por:
-    //   const match = await bcrypt.compare(password, user.password);
-    //   if (!match) return res.status(401).json({ error: "Credenciales incorrectas" });
-    if (user.password !== password) {
+    // bcrypt.compare verifica la contraseña ingresada contra el hash guardado en BD.
+    // Nunca se expone el hash al frontend ni se hace comparación en texto plano.
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
       return res.status(401).json({ error: "Credenciales incorrectas" });
     }
 
     // ── Nunca enviar la contraseña al cliente ──
     delete user.password;
 
-    // TODO FASE 2: emitir un JWT en lugar del objeto user:
-    //   const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "8h" });
-    //   return res.json({ token });
+    // Generar JWT con información mínima: solo id y correo.
+    // El frontend lo adjunta en cada petición privada como "Authorization: Bearer <token>".
+    const token = jwt.sign(
+      { id: user.id, correo: user.correo },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    res.json({ user });
+    // Devolver token + datos del usuario (sin password)
+    return res.json({
+      token,
+      user: {
+        id:          user.id,
+        nombre:      user.nombre,
+        apellido:    user.apellido,
+        correo:      user.correo,
+        web:         user.web,
+        razon_social: user.razon_social,
+        ruc:         user.ruc,
+        direccion:   user.direccion,
+        logo_url:    user.logo_url,
+      },
+    });
 
   } catch (error) {
     console.error("[authController] login error:", error);
@@ -257,17 +279,19 @@ export const updateUserPassword = async (req, res) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    // Fase actual: comparación en texto plano.
-    // TODO Fase 2: reemplazar por bcrypt.compare(oldPassword, rows[0].password)
-    if (rows[0].password !== oldPassword) {
+    // bcrypt.compare verifica la contraseña antigua contra el hash almacenado en BD
+    // sin exponer el hash en memoria ni en consola.
+    const isOldPasswordValid = await bcrypt.compare(oldPassword, rows[0].password);
+    if (!isOldPasswordValid) {
       return res.status(401).json({ error: "La contraseña antigua no es correcta" });
     }
 
-    // Fase actual: guardar en texto plano.
-    // TODO Fase 2: guardar hash con bcrypt.hash(newPassword, 10)
+    // bcrypt.hash protege la nueva contraseña antes de guardarla.
+    // El factor de costo 10 equilibra seguridad y rendimiento.
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
     await pool.query(
       "UPDATE users SET password = ? WHERE id = ?",
-      [newPassword, parseInt(id)]
+      [hashedPassword, parseInt(id)]
     );
 
     // Nunca devolver la contraseña en la respuesta

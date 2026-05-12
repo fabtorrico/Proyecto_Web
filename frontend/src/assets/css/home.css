@@ -1234,6 +1234,39 @@ html {
   margin-top: 10px;
 }
 
+/* Input del date picker en PublicClaimBook */
+.claim-date-input {
+  width: 100%;
+  max-width: 260px;
+  padding: 10px;
+  border: 1px solid #9ca3af;
+  border-radius: 4px;
+  background: white;
+  font-size: 14px;
+  color: #111827;
+  box-sizing: border-box;
+}
+
+/* Checkbox + link de Política de Privacidad en el formulario público */
+.privacy-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.privacy-link {
+  color: #2563eb;
+  text-decoration: none;
+  margin: 0 2px;
+}
+
+.privacy-link:hover {
+  text-decoration: underline;
+}
+
 /* Contenedor del canvas QR generado */
 .qr-box {
   margin-top: 15px;

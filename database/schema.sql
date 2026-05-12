@@ -1,4 +1,5 @@
 CREATE DATABASE proyecto_web;
+
 USE proyecto_web;
 
 CREATE TABLE users (
@@ -6,7 +7,7 @@ CREATE TABLE users (
   nombre VARCHAR(100) NOT NULL,
   apellido VARCHAR(100) NOT NULL,
   correo VARCHAR(100) UNIQUE NOT NULL,
-  password VARCHAR(100) NOT NULL,
+  password VARCHAR(255) NOT NULL,
   web VARCHAR(255),
   razon_social VARCHAR(255) NOT NULL,
   ruc VARCHAR(11) NOT NULL,
@@ -15,16 +16,80 @@ CREATE TABLE users (
 );
 
 INSERT INTO users (
-  nombre, apellido, correo, password, web,
-  razon_social, ruc, direccion, logo_url
+  nombre,
+  apellido,
+  correo,
+  password,
+  web,
+  razon_social,
+  ruc,
+  direccion,
+  logo_url
 ) VALUES (
   'Fabricio',
   'Torrico',
   '123@hotmail.com',
-  '123456',
+  '$2b$10$....',
   '',
   'razon',
   '99999999999',
   'abc',
   ''
+);
+
+CREATE TABLE claims (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  user_id INT NOT NULL,
+  
+  correlativo VARCHAR(50) NOT NULL UNIQUE,
+  codigo_seguimiento VARCHAR(20) NOT NULL UNIQUE,
+
+  nombre VARCHAR(100) NOT NULL,
+  primer_apellido VARCHAR(100) NOT NULL,
+  segundo_apellido VARCHAR(100) NOT NULL,
+
+  tipo_documento VARCHAR(50) NOT NULL,
+  numero_documento VARCHAR(30) NOT NULL,
+  celular VARCHAR(9) NOT NULL,
+
+  departamento VARCHAR(100) NOT NULL,
+  provincia VARCHAR(100) NOT NULL,
+  distrito VARCHAR(100) NOT NULL,
+
+  direccion TEXT NOT NULL,
+  referencia TEXT,
+
+  correo_electronico VARCHAR(150) NOT NULL,
+
+  es_menor_edad ENUM('Si', 'No') NOT NULL,
+
+  tipo_reclamo VARCHAR(50) NOT NULL,
+  tipo_consumo VARCHAR(50) NOT NULL,
+
+  numero_pedido VARCHAR(100),
+
+  monto_reclamado DECIMAL(10,2) NOT NULL,
+
+  descripcion_producto_servicio TEXT NOT NULL,
+
+  fecha_compra_consumo DATE,
+
+  archivo_adjunto VARCHAR(255),
+
+  pedido_cliente TEXT NOT NULL,
+
+  acepta_politica BOOLEAN NOT NULL DEFAULT 0,
+
+  estado ENUM('pendiente', 'completado')
+  NOT NULL DEFAULT 'pendiente',
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ON UPDATE CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (user_id)
+  REFERENCES users(id)
+  ON DELETE CASCADE
 );

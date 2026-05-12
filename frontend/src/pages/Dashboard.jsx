@@ -251,7 +251,9 @@ function Dashboard() {
   // Evita mostrar datos desactualizados de localStorage.
   useEffect(() => {
     if (!user?.id) return;
-    fetch(`http://localhost:3000/api/user/${user.id}`)
+    fetch(`http://localhost:3000/api/user/${user.id}`, {
+      headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
+    })
       .then((res) => res.json())
       .then(({ user: fresh }) => {
         if (!fresh) return;
@@ -277,8 +279,8 @@ function Dashboard() {
   };
 
   // ── Logout ────────────────────────────────────────────
-  const handleLogout = () => {
-    localStorage.removeItem("user");
+  const handleLogout = () => {    // Eliminar token JWT y datos del usuario al cerrar sesión
+    localStorage.removeItem("token");    localStorage.removeItem("user");
     navigate("/login");
   };
 
@@ -387,7 +389,11 @@ function Dashboard() {
     try {
       const res = await fetch(`http://localhost:3000/api/users/${user.id}/profile`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // Token JWT requerido por el middleware verifyToken del backend
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
         body: JSON.stringify({
           nombre:   userForm.nombre,
           apellido: userForm.apellido,
@@ -440,7 +446,11 @@ function Dashboard() {
       // Llamada PUT al backend con los datos del negocio
       const res = await fetch(`http://localhost:3000/api/users/${user.id}/business`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // Token JWT requerido por el middleware verifyToken del backend
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
         body: JSON.stringify({
           razon_social: businessForm.razon_social,
           ruc:          businessForm.ruc,
@@ -498,7 +508,11 @@ function Dashboard() {
       // Llamada PUT al backend — el backend verifica la contraseña antigua
       const res = await fetch(`http://localhost:3000/api/users/${user.id}/password`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // Token JWT requerido por el middleware verifyToken del backend
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
         body: JSON.stringify({
           oldPassword: passwordForm.oldPassword,
           newPassword: passwordForm.newPassword,

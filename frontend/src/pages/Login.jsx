@@ -46,9 +46,10 @@ function Login() {
       const data = await res.json();
 
       if (res.ok) {
-        // Guardar usuario en localStorage para usarlo en el Dashboard
+        // Guardar token JWT para adjuntarlo en peticiones privadas
+        localStorage.setItem("token", data.token);
+        // Guardar datos del usuario para mostrarlos en el Dashboard
         localStorage.setItem("user", JSON.stringify(data.user));
-        // Redirigir al dashboard sin recargar la página
         navigate("/dashboard");
       } else {
         // Mostrar el mensaje de error devuelto por el backend
