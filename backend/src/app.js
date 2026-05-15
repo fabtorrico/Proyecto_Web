@@ -3,11 +3,18 @@
 // Configura middleware global y monta las rutas
 // ============================================================
 
-import express from "express";
-import cors    from "cors";
-import dotenv  from "dotenv";
+import express           from "express";
+import cors              from "cors";
+import dotenv            from "dotenv";
+import path              from "path";
+import { fileURLToPath } from "url";
 import authRoutes  from "./routes/authRoutes.js";
 import claimRoutes from "./routes/claimRoutes.js";
+
+// __dirname no existe en módulos ESM; se reconstruye manualmente.
+// app.js está en backend/src, por eso "../uploads" apunta a backend/uploads.
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
 
 // Carga las variables de entorno desde backend/.env
 dotenv.config();
@@ -26,6 +33,11 @@ app.use(cors({
 
 // Parsea el body de los requests como JSON
 app.use(express.json());
+
+// ── Archivos estáticos ────────────────────────────────────
+// Sirve los archivos de uploads/claims en /uploads/claims/{nombre}
+// Necesario para que el botón "VER ARCHIVO ADJUNTO" del Dashboard pueda abrirlos.
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // ── Rutas ──────────────────────────────────────────────────
 

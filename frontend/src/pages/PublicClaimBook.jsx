@@ -305,6 +305,22 @@ function PublicClaimBook() {
       return;
     }
 
+    // ── Validar archivo adjunto (si existe) ───────────────
+    // Se valida en frontend para dar feedback inmediato sin depender del backend.
+    const allowedFileExtensions = ["jpg", "jpeg", "png", "pdf", "doc", "docx", "xls", "xlsx"];
+    if (claimForm.archivo_adjunto) {
+      const file      = claimForm.archivo_adjunto;
+      const extension = file.name.split(".").pop().toLowerCase();
+      if (!allowedFileExtensions.includes(extension)) {
+        setClaimErrorMessage("Formato de archivo no permitido. Use: JPG, PNG, PDF, DOC, DOCX, XLS o XLSX.");
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setClaimErrorMessage("El archivo no debe superar los 10 MB.");
+        return;
+      }
+    }
+
     try {
       // Verificar que existe la empresa asociada (user_id desde localStorage)
       if (!user?.id) {
@@ -314,59 +330,52 @@ function PublicClaimBook() {
 
       setSubmitLoading(true);
 
-      // Payload: todos los campos del formulario salvo captcha_respuesta.
-      // user_id: temporalmente desde localStorage.
-      // Fase 2: el backend buscará user_id usando el slug de la URL pública.
-      const payload = {
-        user_id: user.id,
+      // ── FormData: necesario para enviar archivos binarios junto con los campos de texto.
+      // NO se puede usar JSON.stringify cuando hay un File en el payload.
+      // El navegador asigna automáticamente Content-Type: multipart/form-data
+      // con el boundary correcto — NO agregar el header manualmente.
+      const formData = new FormData();
 
-        nombre:           claimForm.nombre,
-        primer_apellido:  claimForm.primer_apellido,
-        segundo_apellido: claimForm.segundo_apellido,
-
-        tipo_documento:   claimForm.tipo_documento,
-        numero_documento: claimForm.numero_documento,
-        celular:          claimForm.celular,
-
-        departamento: claimForm.departamento,
-        provincia:    claimForm.provincia,
-        distrito:     claimForm.distrito,
-
-        direccion:           claimForm.direccion,
-        referencia:          claimForm.referencia,
-        correo_electronico:  claimForm.correo_electronico,
-
-        es_menor_edad: claimForm.es_menor_edad,
-
-        tipo_reclamo:  claimForm.tipo_reclamo,
-        tipo_consumo:  claimForm.tipo_consumo,
-        numero_pedido: claimForm.numero_pedido,
-
-        monto_reclamado:              claimForm.monto_reclamado,
-        descripcion_producto_servicio: claimForm.descripcion_producto_servicio,
-        // detalle_reclamo se guarda en claims.detalle_reclamo (columna ya existe en BD)
-        detalle_reclamo:               claimForm.detalle_reclamo,
-
-        // Serializar Date a YYYY-MM-DD o enviar null
-        fecha_compra_consumo: claimForm.fecha_compra_consumo
+      formData.append("user_id",          user.id);
+      formData.append("nombre",            claimForm.nombre);
+      formData.append("primer_apellido",   claimForm.primer_apellido);
+      formData.append("segundo_apellido",  claimForm.segundo_apellido);
+      formData.append("tipo_documento",    claimForm.tipo_documento);
+      formData.append("numero_documento",  claimForm.numero_documento);
+      formData.append("celular",           claimForm.celular);
+      formData.append("departamento",      claimForm.departamento);
+      formData.append("provincia",         claimForm.provincia);
+      formData.append("distrito",          claimForm.distrito);
+      formData.append("direccion",         claimForm.direccion);
+      formData.append("referencia",        claimForm.referencia);
+      formData.append("correo_electronico", claimForm.correo_electronico);
+      formData.append("es_menor_edad",     claimForm.es_menor_edad);
+      formData.append("tipo_reclamo",      claimForm.tipo_reclamo);
+      formData.append("tipo_consumo",      claimForm.tipo_consumo);
+      formData.append("numero_pedido",     claimForm.numero_pedido);
+      formData.append("monto_reclamado",   claimForm.monto_reclamado);
+      formData.append("descripcion_producto_servicio", claimForm.descripcion_producto_servicio);
+      // detalle_reclamo se guarda en claims.detalle_reclamo (columna ya existe en BD)
+      formData.append("detalle_reclamo",   claimForm.detalle_reclamo);
+      formData.append(
+        "fecha_compra_consumo",
+        claimForm.fecha_compra_consumo
           ? claimForm.fecha_compra_consumo.toISOString().split("T")[0]
-          : null,
+          : ""
+      );
+      formData.append("pedido_cliente",    claimForm.pedido_cliente);
+      // acepta_politica como "1"/"0" porque FormData convierte todo a string
+      formData.append("acepta_politica",   claimForm.acepta_politica ? "1" : "0");
 
-        // Solo se guarda el nombre del archivo; el binario no se envía aún
-        archivo_adjunto: claimForm.archivo_adjunto
-          ? claimForm.archivo_adjunto.name
-          : "",
+      // El archivo binario se adjunta directamente — multer lo procesa en el backend
+      if (claimForm.archivo_adjunto) {
+        formData.append("archivo_adjunto", claimForm.archivo_adjunto);
+      }
 
-        pedido_cliente: claimForm.pedido_cliente,
-
-        // El backend valida que sea true; se persiste como TINYINT(1)
-        acepta_politica: claimForm.acepta_politica,
-      };
-
-      const res  = await fetch("http://localhost:3000/api/claims", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(payload),
+      const res = await fetch("http://localhost:3000/api/claims", {
+        method: "POST",
+        // Sin header Content-Type: el navegador lo pone automáticamente con el boundary
+        body: formData,
       });
 
       const data = await res.json();

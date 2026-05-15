@@ -57,8 +57,9 @@ const getExpirationDate = () => {
 // ReportsTable — tabla de reportes con paginación.
 // Recibe datos reales desde el backend vía props.
 // reports: array de reclamos; loading/error: estados de carga.
+// onAction: callback opcional llamado con el objeto claim al hacer clic en el botón.
 // emptyMessage: texto cuando no hay registros (muestra tabla con cabeceras).
-function ReportsTable({ reports, loading, error, actionLabel, emptyMessage = "No hay reclamos." }) {
+function ReportsTable({ reports, loading, error, actionLabel, onAction, emptyMessage = "No hay reclamos." }) {
   const [page, setPage] = useState(1);
 
   // Reiniciar página cuando cambian los datos
@@ -147,15 +148,20 @@ function ReportsTable({ reports, loading, error, actionLabel, emptyMessage = "No
                   {new Date(claim.created_at).toISOString().split("T")[0]}
                 </td>
                 <td style={{ padding: "10px 12px" }}>
-                  <button style={{
-                    padding: "4px 14px",
-                    background: "#1e3a8a",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    cursor: "pointer",
-                  }}>
+                  {/* Al hacer clic llama onAction con el reclamo seleccionado (si se proporcionó) */}
+                  <button
+                    type="button"
+                    onClick={() => onAction && onAction(claim)}
+                    style={{
+                      padding: "4px 14px",
+                      background: "#1e3a8a",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                    }}
+                  >
                     {actionLabel}
                   </button>
                 </td>
@@ -386,6 +392,56 @@ function Dashboard() {
   const handleLogout = () => {    // Eliminar token JWT y datos del usuario al cerrar sesión
     localStorage.removeItem("token");    localStorage.removeItem("user");
     navigate("/login");
+  };
+
+  // ── Modal de reclamo ─────────────────────────────────
+  // Todos los hooks deben declararse ANTES del early return (reglas de React).
+  // selectedClaim: objeto del reclamo seleccionado desde la tabla Pendientes.
+  // officialResponse: texto que el admin escribe como respuesta oficial.
+  const [selectedClaim,    setSelectedClaim]    = useState(null);
+  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+  const [officialResponse, setOfficialResponse] = useState("");
+
+  const openClaimModal  = (claim) => { setSelectedClaim(claim); setIsClaimModalOpen(true); };
+  // Al cerrar, se limpia todo: el reclamo seleccionado y el texto de respuesta.
+  const closeClaimModal = () => {
+    setSelectedClaim(null);
+    setIsClaimModalOpen(false);
+    setOfficialResponse("");
+  };
+
+  // ── Helpers para visualizar/descargar archivos adjuntos ──
+  // Actualmente archivo_adjunto guarda solo el nombre del archivo.
+  // Cuando se implemente multer/upload real, los archivos se servirán desde /uploads/claims.
+  // Apunta al backend (puerto 3000) donde Express sirve /uploads como estáticos.
+  const getAttachmentUrl = (fileName) =>
+    `http://localhost:3000/uploads/claims/${fileName}`;
+
+  const getFileExtension = (fileName = "") =>
+    fileName.split(".").pop().toLowerCase();
+
+  // Abre en nueva pestaña si es PDF/imagen; descarga si es documento Office.
+  // Para extensiones no reconocidas, intenta abrir en nueva pestaña.
+  const handleViewAttachment = (fileName) => {
+    if (!fileName) return;
+    const fileUrl   = getAttachmentUrl(fileName);
+    const extension = getFileExtension(fileName);
+    const previewExtensions  = ["pdf", "jpg", "jpeg", "png"];
+    const downloadExtensions = ["doc", "docx", "xls", "xlsx"];
+    if (previewExtensions.includes(extension)) {
+      window.open(fileUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (downloadExtensions.includes(extension)) {
+      const link = document.createElement("a");
+      link.href     = fileUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+    window.open(fileUrl, "_blank", "noopener,noreferrer");
   };
 
   // Mientras se resuelve la validación, no renderizar nada
@@ -644,6 +700,7 @@ function Dashboard() {
   const tabs = ["Pendientes", "Completado", "Integración", "Ajuste"];
 
   return (
+    <>
     <div style={{ background: "#f3f4f6", minHeight: "100vh", padding: "24px" }}>
 
       {/* ── Cabecera ─────────────────────────────────── */}
@@ -746,6 +803,7 @@ function Dashboard() {
               loading={pendingLoading}
               error={pendingError}
               actionLabel="Ver"
+              onAction={openClaimModal}
             />
           )}
 
@@ -1011,6 +1069,161 @@ function Dashboard() {
         </div>
       </div>
     </div>
+
+    {/* ── Modal de respuesta de reclamo ─────────────────────────────
+        Se muestra sobrepuesto cuando isClaimModalOpen === true.
+        selectedClaim: objeto con todos los datos del reclamo desde la BD.
+        Diseño de dos columnas: izquierda (datos) — derecha (respuesta). */}
+    {isClaimModalOpen && selectedClaim && (
+      <div className="claim-modal-overlay" onClick={closeClaimModal}>
+        <div className="claim-modal" onClick={(e) => e.stopPropagation()}>
+
+          {/* ── Header: título + correlativo en azul + botón cerrar ── */}
+          <div className="claim-modal-header">
+            <h3>
+              Responder Reclamo{" "}
+              {selectedClaim.correlativo && (
+                <span className="claim-modal-correlativo">: {selectedClaim.correlativo}</span>
+              )}
+            </h3>
+            <button type="button" className="claim-modal-close-x" onClick={closeClaimModal}>×</button>
+          </div>
+
+          {/* ── Body: grid de dos columnas ── */}
+          <div className="claim-modal-body">
+
+            {/* ══ COLUMNA IZQUIERDA — datos del reclamo ══
+                Muestra tres secciones tipo tarjeta: consumidor, detalle, adjuntos.
+                38% del ancho, fondo gris claro, scroll independiente. */}
+            <div className="claim-modal-left">
+
+              {/* Sección A: Datos del Consumidor */}
+              <div className="claim-modal-section">
+                <div className="claim-modal-section-header">
+                  <span>👤</span><span>Datos del Consumidor</span>
+                </div>
+                <div className="claim-modal-row">
+                  <span className="cml-label">Nombre</span>
+                  <span className="cml-value">
+                    {[selectedClaim.nombre, selectedClaim.primer_apellido, selectedClaim.segundo_apellido]
+                      .filter(Boolean).join(" ")}
+                  </span>
+                </div>
+                <div className="claim-modal-row">
+                  <span className="cml-label">Documento</span>
+                  <span className="cml-value">{selectedClaim.tipo_documento}: {selectedClaim.numero_documento}</span>
+                </div>
+                <div className="claim-modal-row">
+                  <span className="cml-label">Contacto</span>
+                  <span className="cml-value">{selectedClaim.celular} / {selectedClaim.correo_electronico}</span>
+                </div>
+                <div className="claim-modal-row" style={{ borderBottom: "none" }}>
+                  <span className="cml-label">Ubicación</span>
+                  <span className="cml-value">
+                    {selectedClaim.departamento}, {selectedClaim.provincia} ({selectedClaim.distrito})
+                  </span>
+                </div>
+              </div>
+
+              {/* Sección B: Detalle del Reclamo */}
+              <div className="claim-modal-section">
+                <div className="claim-modal-section-header">
+                  <span>📄</span><span>Detalle del Reclamo</span>
+                </div>
+                <div className="claim-modal-row">
+                  <span className="cml-label">Tipo</span>
+                  <span className="cml-value">
+                    {/* Badge de color según tipo_reclamo */}
+                    <span className={
+                      selectedClaim.tipo_reclamo?.toUpperCase() === "RECLAMO"
+                        ? "claim-badge-reclamo"
+                        : "claim-badge-queja"
+                    }>
+                      {selectedClaim.tipo_reclamo}
+                    </span>
+                  </span>
+                </div>
+                <div className="claim-modal-row">
+                  <span className="cml-label">Monto</span>
+                  <span className="cml-value">S/ {selectedClaim.monto_reclamado}</span>
+                </div>
+                {/* Campos de texto largo: bloque con borde y fondo blanco */}
+                <div className="claim-modal-col">
+                  <span className="cml-label-top">Producto / Servicio</span>
+                  <div className="claim-text-block">{selectedClaim.descripcion_producto_servicio}</div>
+                </div>
+                <div className="claim-modal-col">
+                  <span className="cml-label-top">Queja / Reclamo</span>
+                  <div className="claim-text-block">{selectedClaim.detalle_reclamo}</div>
+                </div>
+                <div className="claim-modal-col" style={{ borderBottom: "none" }}>
+                  <span className="cml-label-top">Pedido del Cliente</span>
+                  <div className="claim-text-block">{selectedClaim.pedido_cliente}</div>
+                </div>
+              </div>
+
+              {/* Sección C: Evidencias / Adjuntos */}
+              <div className="claim-modal-section claim-modal-section-last">
+                <div className="claim-modal-section-header">
+                  <span>📎</span><span>Evidencias / Adjuntos</span>
+                </div>
+                <div style={{ padding: "14px 16px" }}>
+                  {selectedClaim.archivo_adjunto ? (
+                    /* Botón ancho que muestra el archivo adjunto */
+                    <button
+                      type="button"
+                      className="claim-adjunto-btn"
+                      onClick={() => handleViewAttachment(selectedClaim.archivo_adjunto)}
+                    >
+                      📎 VER ARCHIVO ADJUNTO
+                    </button>
+                  ) : (
+                    <span style={{ color: "#9ca3af", fontSize: "14px" }}>Sin archivo adjunto</span>
+                  )}
+                </div>
+              </div>
+
+            </div>{/* fin columna izquierda */}
+
+            {/* ══ COLUMNA DERECHA — respuesta oficial ══
+                El admin escribe aquí la respuesta para el cliente.
+                officialResponse: estado local — por ahora sin envío al backend. */}
+            <div className="claim-modal-right">
+              <div className="claim-response-area">
+                <p className="claim-response-title">
+                  <span style={{ marginRight: "8px" }}>💬</span>
+                  Escriba la respuesta oficial para el cliente:
+                </p>
+                <textarea
+                  className="claim-response-textarea"
+                  placeholder="Ej: Estimado cliente, hemos procesado su solicitud y procederemos a..."
+                  value={officialResponse}
+                  onChange={(e) => setOfficialResponse(e.target.value)}
+                />
+              </div>
+            </div>
+
+          </div>{/* fin body */}
+
+          {/* ── Footer: botones de acción ── */}
+          <div className="claim-modal-footer">
+            <button type="button" className="claim-modal-secondary-btn" onClick={closeClaimModal}>
+              ✕ Cerrar
+            </button>
+            {/* Enviar Respuesta: aún sin función backend — se implementará en la siguiente fase */}
+            <button
+              type="button"
+              className="claim-modal-primary-btn"
+              onClick={() => console.log(officialResponse)}
+            >
+              Enviar Respuesta Oficial
+            </button>
+          </div>
+
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

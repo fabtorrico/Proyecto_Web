@@ -190,7 +190,12 @@ export const createClaim = async (req, res) => {
     const correlativo        = await generateCorrelativo();
     const codigo_seguimiento = await generateUniqueTrackingCode();
 
-    // ── Guardar en claims ──────────────────────────────────
+    // Obtener el nombre del archivo subido por multer.
+    // req.file está disponible porque uploadClaimAttachment.single() procesó el request.
+    // Si no se adjuntó archivo, req.file es undefined y se guarda cadena vacía.
+    const uploadedFileName = req.file ? req.file.filename : "";
+
+    // ── Guardar en claims ─────────────────────────────────
     // Cómo se guarda: todos los campos del formulario + los dos generados.
     // captcha_respuesta NO se persiste (es solo verificación visual).
     await pool.query(
@@ -276,7 +281,7 @@ export const createClaim = async (req, res) => {
         detalle_reclamo,
         fecha_compra_consumo || null,
 
-        archivo_adjunto || "",
+        uploadedFileName,
 
         pedido_cliente,
 
@@ -310,9 +315,25 @@ export const getPendingClaims = async (req, res) => {
          id,
          correlativo,
          codigo_seguimiento,
+         -- Campo calculado para la columna "Cliente" en la tabla del Dashboard
          CONCAT(nombre, ' ', primer_apellido, ' ', segundo_apellido) AS cliente,
+         -- Campos individuales necesarios para el modal de detalle del reclamo
+         nombre,
+         primer_apellido,
+         segundo_apellido,
+         tipo_documento,
+         numero_documento,
+         celular,
+         correo_electronico,
+         departamento,
+         provincia,
+         distrito,
          tipo_reclamo,
          monto_reclamado,
+         descripcion_producto_servicio,
+         detalle_reclamo,
+         pedido_cliente,
+         archivo_adjunto,
          created_at
        FROM claims
        WHERE user_id = ?

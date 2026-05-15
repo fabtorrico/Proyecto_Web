@@ -2,3 +2,5 @@ node_modules
 .env
 dist
 .vscode
+# Archivos adjuntos subidos por usuarios — datos sensibles, no se suben a GitHub
+uploads/

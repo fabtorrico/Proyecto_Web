@@ -40,11 +40,14 @@ INSERT INTO users (
 CREATE TABLE claims (
   id INT AUTO_INCREMENT PRIMARY KEY,
 
+  -- Relación con empresa/usuario dueño del libro
   user_id INT NOT NULL,
-  
+
+  -- Identificadores automáticos
   correlativo VARCHAR(50) NOT NULL UNIQUE,
   codigo_seguimiento VARCHAR(20) NOT NULL UNIQUE,
 
+  -- Datos del consumidor reclamante
   nombre VARCHAR(100) NOT NULL,
   primer_apellido VARCHAR(100) NOT NULL,
   segundo_apellido VARCHAR(100) NOT NULL,
@@ -64,6 +67,7 @@ CREATE TABLE claims (
 
   es_menor_edad ENUM('Si', 'No') NOT NULL,
 
+  -- Datos del reclamo
   tipo_reclamo VARCHAR(50) NOT NULL,
   tipo_consumo VARCHAR(50) NOT NULL,
 
@@ -73,16 +77,23 @@ CREATE TABLE claims (
 
   descripcion_producto_servicio TEXT NOT NULL,
 
-  fecha_compra_consumo DATE,
-  
   detalle_reclamo TEXT NOT NULL,
+
+  fecha_compra_consumo DATE,
 
   archivo_adjunto VARCHAR(255),
 
+  -- Pedido final del cliente
   pedido_cliente TEXT NOT NULL,
 
+  -- Respuesta futura de la empresa
+  respuesta TEXT NULL,
+  fecha_respuesta DATETIME NULL,
+
+  -- Política de privacidad
   acepta_politica BOOLEAN NOT NULL DEFAULT 0,
 
+  -- Estado del reclamo
   estado ENUM('pendiente', 'completado')
   NOT NULL DEFAULT 'pendiente',
 
@@ -91,7 +102,9 @@ CREATE TABLE claims (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   ON UPDATE CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (user_id)
-  REFERENCES users(id)
-  ON DELETE CASCADE
+  -- Relación con users
+  CONSTRAINT fk_claims_user
+    FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON DELETE CASCADE
 );

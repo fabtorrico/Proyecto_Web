@@ -4,16 +4,25 @@
 
 import express from "express";
 import { createClaim, getPendingClaims, getCompletedClaims } from "../controllers/claimController.js";
-import { verifyToken } from "../middlewares/authMiddleware.js";
+import { verifyToken }            from "../middlewares/authMiddleware.js";
+// uploadClaimAttachment: middleware multer que procesa el archivo antes de createClaim.
+// Lee el campo "archivo_adjunto" del formulario multipart y lo guarda en uploads/claims/.
+import { uploadClaimAttachment }  from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
-// POST /api/claims — ruta pública, no requiere JWT
-router.post("/claims", createClaim);
+// POST /api/claims — ruta pública, no requiere JWT.
+// uploadClaimAttachment.single("archivo_adjunto") procesa el archivo si existe;
+// si no se envía archivo, req.file queda undefined y el reclamo se guarda sin adjunto.
+router.post(
+  "/claims",
+  uploadClaimAttachment.single("archivo_adjunto"),
+  createClaim
+);
 
 // GET /api/claims/pending — ruta protegida con JWT
 // Solo devuelve reclamos del usuario autenticado (filtro por user_id del token)
-router.get("/claims/pending", verifyToken, getPendingClaims);
+router.get("/claims/pending",   verifyToken, getPendingClaims);
 
 // GET /api/claims/completed — ruta protegida con JWT
 // Solo devuelve reclamos completados del usuario autenticado
