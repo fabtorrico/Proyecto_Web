@@ -398,16 +398,91 @@ function Dashboard() {
   // Todos los hooks deben declararse ANTES del early return (reglas de React).
   // selectedClaim: objeto del reclamo seleccionado desde la tabla Pendientes.
   // officialResponse: texto que el admin escribe como respuesta oficial.
-  const [selectedClaim,    setSelectedClaim]    = useState(null);
-  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
-  const [officialResponse, setOfficialResponse] = useState("");
+  const [selectedClaim,         setSelectedClaim]         = useState(null);
+  const [isClaimModalOpen,      setIsClaimModalOpen]      = useState(false);
+  const [officialResponse,      setOfficialResponse]      = useState("");
+  const [isSendingResponse,     setIsSendingResponse]     = useState(false);
+  const [responseSuccessMessage, setResponseSuccessMessage] = useState("");
+  const [responseErrorMessage,   setResponseErrorMessage]   = useState("");
+
+  // ── Modal de visualización (Completado) — solo lectura ──
+  // A diferencia del modal de Pendientes, este no permite editar ni enviar nada.
+  // Los datos vienen de getCompletedClaims que incluye respuesta y fecha_respuesta.
+  const [selectedCompletedClaim, setSelectedCompletedClaim] = useState(null);
+  const [isCompletedModalOpen,   setIsCompletedModalOpen]   = useState(false);
+
+  const openCompletedModal  = (claim) => { setSelectedCompletedClaim(claim); setIsCompletedModalOpen(true); };
+  const closeCompletedModal = ()      => { setSelectedCompletedClaim(null);  setIsCompletedModalOpen(false); };
 
   const openClaimModal  = (claim) => { setSelectedClaim(claim); setIsClaimModalOpen(true); };
-  // Al cerrar, se limpia todo: el reclamo seleccionado y el texto de respuesta.
+  // Al cerrar, se limpia todo: reclamo, texto de respuesta y mensajes de estado.
   const closeClaimModal = () => {
     setSelectedClaim(null);
     setIsClaimModalOpen(false);
     setOfficialResponse("");
+    setResponseSuccessMessage("");
+    setResponseErrorMessage("");
+  };
+
+  // ── Enviar respuesta oficial al backend ───────────────────
+  // PUT /api/claims/:claimId/respond — protegido con JWT.
+  // Al tener éxito: quita el reclamo de la lista Pendientes,
+  // muestra confirmación brevemente y cierra el modal.
+  const handleSendOfficialResponse = async () => {
+    try {
+      setResponseSuccessMessage("");
+      setResponseErrorMessage("");
+
+      if (!selectedClaim?.id) {
+        setResponseErrorMessage("No se encontró el reclamo seleccionado");
+        return;
+      }
+
+      // Validar que se haya escrito algo antes de llamar al backend
+      if (!officialResponse || officialResponse.trim() === "") {
+        setResponseErrorMessage("Debe escribir una respuesta oficial");
+        return;
+      }
+
+      setIsSendingResponse(true);
+
+      const res = await fetch(
+        `http://localhost:3000/api/claims/${selectedClaim.id}/respond`,
+        {
+          method:  "PUT",
+          headers: {
+            "Content-Type":  "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ respuesta: officialResponse }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setResponseErrorMessage(data.error || "No se pudo enviar la respuesta");
+        return;
+      }
+
+      // Éxito: mostrar mensaje y quitar el reclamo de la lista Pendientes de inmediato
+      setResponseSuccessMessage("Respuesta enviada correctamente");
+      setPendingClaims((prev) => prev.filter((c) => c.id !== selectedClaim.id));
+
+      // Cerrar modal después de 1.2 s y recargar Completado para que aparezca allí
+      setTimeout(() => {
+        closeClaimModal();
+        setResponseSuccessMessage("");
+        setResponseErrorMessage("");
+        fetchCompletedClaims();
+      }, 1200);
+
+    } catch (error) {
+      console.error("Error enviando respuesta:", error);
+      setResponseErrorMessage("Error al enviar respuesta. Verifica tu conexión.");
+    } finally {
+      setIsSendingResponse(false);
+    }
   };
 
   // ── Helpers para visualizar/descargar archivos adjuntos ──
@@ -814,6 +889,7 @@ function Dashboard() {
               loading={completedLoading}
               error={completedError}
               actionLabel="Ver Respuesta"
+              onAction={openCompletedModal}
               emptyMessage="No hay reclamos completados."
             />
           )}
@@ -1187,7 +1263,7 @@ function Dashboard() {
 
             {/* ══ COLUMNA DERECHA — respuesta oficial ══
                 El admin escribe aquí la respuesta para el cliente.
-                officialResponse: estado local — por ahora sin envío al backend. */}
+                officialResponse: estado local conectado al backend mediante handleSendOfficialResponse. */}
             <div className="claim-modal-right">
               <div className="claim-response-area">
                 <p className="claim-response-title">
@@ -1200,6 +1276,13 @@ function Dashboard() {
                   value={officialResponse}
                   onChange={(e) => setOfficialResponse(e.target.value)}
                 />
+                {/* Mensajes de éxito / error debajo del textarea */}
+                {responseErrorMessage && (
+                  <p className="error-message" style={{ marginTop: "10px" }}>{responseErrorMessage}</p>
+                )}
+                {responseSuccessMessage && (
+                  <p className="success-message" style={{ marginTop: "10px" }}>{responseSuccessMessage}</p>
+                )}
               </div>
             </div>
 
@@ -1210,13 +1293,186 @@ function Dashboard() {
             <button type="button" className="claim-modal-secondary-btn" onClick={closeClaimModal}>
               ✕ Cerrar
             </button>
-            {/* Enviar Respuesta: aún sin función backend — se implementará en la siguiente fase */}
+            {/* Conectado a handleSendOfficialResponse — guarda respuesta y cambia estado a completado */}
             <button
               type="button"
               className="claim-modal-primary-btn"
-              onClick={() => console.log(officialResponse)}
+              onClick={handleSendOfficialResponse}
+              disabled={isSendingResponse}
             >
-              Enviar Respuesta Oficial
+              {isSendingResponse ? "Enviando..." : "Enviar Respuesta Oficial"}
+            </button>
+          </div>
+
+        </div>
+      </div>
+    )}
+
+    {/* ── Modal de visualización de reclamo completado — SOLO LECTURA ──────────
+        Reutiliza las mismas clases CSS del modal de Pendientes para mantener
+        el mismo estilo visual profesional. No permite editar ni enviar nada.
+        Datos: getCompletedClaims (incluye respuesta + fecha_respuesta). */}
+    {isCompletedModalOpen && selectedCompletedClaim && (
+      <div className="claim-modal-overlay" onClick={closeCompletedModal}>
+        <div className="claim-modal" onClick={(e) => e.stopPropagation()}>
+
+          {/* Header: título + correlativo en azul + badge Completado + × */}
+          <div className="claim-modal-header">
+            <h3>
+              Respuesta del Reclamo{" "}
+              <span className="claim-modal-correlativo">: {selectedCompletedClaim.correlativo}</span>
+            </h3>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              {/* Badge visual que indica que este reclamo ya fue resuelto */}
+              <span style={{
+                background: "#dcfce7", color: "#166534",
+                padding: "4px 10px", borderRadius: "999px",
+                fontSize: "12px", fontWeight: 700,
+              }}>Completado</span>
+              <button type="button" className="claim-modal-close-x" onClick={closeCompletedModal}>×</button>
+            </div>
+          </div>
+
+          {/* Body: dos columnas — izquierda datos del reclamo, derecha respuesta oficial */}
+          <div className="claim-modal-body">
+
+            {/* Columna izquierda: replica exacta del modal de Pendientes (solo lectura) */}
+            <div className="claim-modal-left">
+
+              {/* Sección A: Datos del Consumidor */}
+              <div className="claim-modal-section">
+                <div className="claim-modal-section-header"><span>👤</span><span>Datos del Consumidor</span></div>
+                <div className="claim-modal-row">
+                  <span className="cml-label">Nombre</span>
+                  <span className="cml-value">
+                    {[selectedCompletedClaim.nombre, selectedCompletedClaim.primer_apellido, selectedCompletedClaim.segundo_apellido]
+                      .filter(Boolean).join(" ")}
+                  </span>
+                </div>
+                <div className="claim-modal-row">
+                  <span className="cml-label">Documento</span>
+                  <span className="cml-value">{selectedCompletedClaim.tipo_documento}: {selectedCompletedClaim.numero_documento}</span>
+                </div>
+                <div className="claim-modal-row">
+                  <span className="cml-label">Contacto</span>
+                  <span className="cml-value">{selectedCompletedClaim.celular} / {selectedCompletedClaim.correo_electronico}</span>
+                </div>
+                <div className="claim-modal-row" style={{ borderBottom: "none" }}>
+                  <span className="cml-label">Ubicación</span>
+                  <span className="cml-value">
+                    {selectedCompletedClaim.departamento}, {selectedCompletedClaim.provincia} ({selectedCompletedClaim.distrito})
+                  </span>
+                </div>
+              </div>
+
+              {/* Sección B: Detalle del Reclamo */}
+              <div className="claim-modal-section">
+                <div className="claim-modal-section-header"><span>📄</span><span>Detalle del Reclamo</span></div>
+                <div className="claim-modal-row">
+                  <span className="cml-label">Tipo</span>
+                  <span className="cml-value">
+                    <span className={
+                      selectedCompletedClaim.tipo_reclamo?.toUpperCase() === "RECLAMO"
+                        ? "claim-badge-reclamo" : "claim-badge-queja"
+                    }>{selectedCompletedClaim.tipo_reclamo}</span>
+                  </span>
+                </div>
+                <div className="claim-modal-row">
+                  <span className="cml-label">Monto</span>
+                  <span className="cml-value">S/ {selectedCompletedClaim.monto_reclamado}</span>
+                </div>
+                <div className="claim-modal-col">
+                  <span className="cml-label-top">Producto / Servicio</span>
+                  <div className="claim-text-block">{selectedCompletedClaim.descripcion_producto_servicio}</div>
+                </div>
+                <div className="claim-modal-col">
+                  <span className="cml-label-top">Queja / Reclamo</span>
+                  <div className="claim-text-block">{selectedCompletedClaim.detalle_reclamo}</div>
+                </div>
+                <div className="claim-modal-col" style={{ borderBottom: "none" }}>
+                  <span className="cml-label-top">Pedido del Cliente</span>
+                  <div className="claim-text-block">{selectedCompletedClaim.pedido_cliente}</div>
+                </div>
+              </div>
+
+              {/* Sección C: Evidencias / Adjuntos — reutiliza handleViewAttachment */}
+              <div className="claim-modal-section claim-modal-section-last">
+                <div className="claim-modal-section-header"><span>📎</span><span>Evidencias / Adjuntos</span></div>
+                <div style={{ padding: "14px 16px" }}>
+                  {selectedCompletedClaim.archivo_adjunto ? (
+                    <button type="button" className="claim-adjunto-btn"
+                      onClick={() => handleViewAttachment(selectedCompletedClaim.archivo_adjunto)}>
+                      📎 VER ARCHIVO ADJUNTO
+                    </button>
+                  ) : (
+                    <span style={{ color: "#9ca3af", fontSize: "14px" }}>Sin archivo adjunto</span>
+                  )}
+                </div>
+              </div>
+
+            </div>{/* fin columna izquierda */}
+
+            {/* Columna derecha: respuesta oficial guardada en BD — solo lectura */}
+            <div className="claim-modal-right">
+              <div className="claim-response-area">
+
+                <p className="claim-response-title">
+                  <span style={{ marginRight: "8px" }}>✅</span>
+                  Respuesta Oficial
+                </p>
+
+                {/* Texto de la respuesta: div de solo lectura, no textarea */}
+                <div style={{
+                  background: "#f8fafc",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  padding: "16px",
+                  minHeight: "220px",
+                  whiteSpace: "pre-wrap",
+                  color: "#374151",
+                  lineHeight: 1.6,
+                  fontSize: "15px",
+                }}>
+                  {selectedCompletedClaim.respuesta || <em style={{ color: "#9ca3af" }}>Sin respuesta registrada</em>}
+                </div>
+
+                {/* Fecha en que se envió la respuesta */}
+                <p style={{ marginTop: "16px", fontSize: "13px", color: "#6b7280" }}>
+                  <strong>Fecha de respuesta:</strong>{" "}
+                  {selectedCompletedClaim.fecha_respuesta
+                    ? new Date(selectedCompletedClaim.fecha_respuesta).toISOString().split("T")[0]
+                    : "Sin fecha registrada"}
+                </p>
+
+                {/* Código de seguimiento para referencia del cliente */}
+                <div style={{ marginTop: "12px" }}>
+                  <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "6px" }}>
+                    <strong>Código de seguimiento:</strong>
+                  </p>
+                  <span style={{
+                    display: "inline-block",
+                    background: "#eff6ff",
+                    color: "#1d4ed8",
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    fontWeight: 700,
+                    fontFamily: "monospace",
+                    fontSize: "15px",
+                    letterSpacing: "0.05em",
+                  }}>
+                    {selectedCompletedClaim.codigo_seguimiento}
+                  </span>
+                </div>
+
+              </div>
+            </div>
+
+          </div>{/* fin body */}
+
+          {/* Footer: solo botón Cerrar — sin enviar nada al backend */}
+          <div className="claim-modal-footer">
+            <button type="button" className="claim-modal-secondary-btn" onClick={closeCompletedModal}>
+              ✕ Cerrar
             </button>
           </div>
 

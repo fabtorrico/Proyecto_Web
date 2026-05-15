@@ -3,7 +3,7 @@
 // ============================================================
 
 import express from "express";
-import { createClaim, getPendingClaims, getCompletedClaims } from "../controllers/claimController.js";
+import { createClaim, getPendingClaims, getCompletedClaims, respondClaim } from "../controllers/claimController.js";
 import { verifyToken }            from "../middlewares/authMiddleware.js";
 // uploadClaimAttachment: middleware multer que procesa el archivo antes de createClaim.
 // Lee el campo "archivo_adjunto" del formulario multipart y lo guarda en uploads/claims/.
@@ -27,5 +27,10 @@ router.get("/claims/pending",   verifyToken, getPendingClaims);
 // GET /api/claims/completed — ruta protegida con JWT
 // Solo devuelve reclamos completados del usuario autenticado
 router.get("/claims/completed", verifyToken, getCompletedClaims);
+
+// PUT /api/claims/:claimId/respond — ruta protegida con JWT
+// Guarda respuesta oficial, fecha_respuesta y cambia estado a completado.
+// Sólo puede ejecutarlo el dueño del reclamo (validación de ownership en el controller).
+router.put("/claims/:claimId/respond", verifyToken, respondClaim);
 
 export default router;

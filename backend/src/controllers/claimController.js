@@ -364,8 +364,26 @@ export const getCompletedClaims = async (req, res) => {
          correlativo,
          codigo_seguimiento,
          CONCAT(nombre, ' ', primer_apellido, ' ', segundo_apellido) AS cliente,
+         -- Campos individuales para el modal de visualización de completados
+         nombre,
+         primer_apellido,
+         segundo_apellido,
+         tipo_documento,
+         numero_documento,
+         celular,
+         correo_electronico,
+         departamento,
+         provincia,
+         distrito,
          tipo_reclamo,
          monto_reclamado,
+         descripcion_producto_servicio,
+         detalle_reclamo,
+         pedido_cliente,
+         archivo_adjunto,
+         -- Campos propios del estado completado
+         respuesta,
+         fecha_respuesta,
          created_at
        FROM claims
        WHERE user_id = ?
@@ -378,6 +396,68 @@ export const getCompletedClaims = async (req, res) => {
 
   } catch (error) {
     console.error("[claimController] getCompletedClaims error:", error);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
+
+// ── respondClaim ────────────────────────────────────
+// Guarda la respuesta oficial, marca el reclamo como completado y registra fecha_respuesta.
+// Ruta protegida con JWT: user_id se extrae del token, nunca del body.
+// Validación de ownership: sólo el dueño del reclamo puede responderlo (claim.user_id === userId).
+export const respondClaim = async (req, res) => {
+  try {
+    // userId viene del token JWT decodificado por verifyToken
+    const userId   = req.user.id;
+    const { claimId }   = req.params;
+    const { respuesta } = req.body;
+
+    if (!claimId) {
+      return res.status(400).json({ error: "ID del reclamo requerido" });
+    }
+
+    // Validar que se haya escrito una respuesta
+    if (!respuesta || respuesta.trim() === "") {
+      return res.status(400).json({ error: "La respuesta es obligatoria" });
+    }
+
+    // Verificar que el reclamo existe y pertenece a esta empresa
+    const [claimRows] = await pool.query(
+      `SELECT id, user_id, estado FROM claims WHERE id = ?`,
+      [claimId]
+    );
+
+    if (claimRows.length === 0) {
+      return res.status(404).json({ error: "Reclamo no encontrado" });
+    }
+
+    const claim = claimRows[0];
+
+    // Validación de ownership: impide que una empresa acceda a reclamos de otra
+    if (claim.user_id !== userId) {
+      return res.status(403).json({ error: "No tienes permiso para responder este reclamo" });
+    }
+
+    // Evitar responder un reclamo ya completado
+    if (claim.estado.toLowerCase() === "completado") {
+      return res.status(400).json({ error: "Este reclamo ya fue respondido" });
+    }
+
+    // Actualizar: guardar respuesta, fecha y cambiar estado a completado
+    await pool.query(
+      `UPDATE claims
+       SET
+         respuesta       = ?,
+         fecha_respuesta = NOW(),
+         estado          = 'completado'
+       WHERE id = ?
+         AND user_id = ?`,
+      [respuesta.trim(), claimId, userId]
+    );
+
+    return res.json({ message: "Respuesta enviada correctamente" });
+
+  } catch (error) {
+    console.error("[claimController] respondClaim error:", error);
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };

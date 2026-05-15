@@ -66,7 +66,7 @@ const PLANS = [
     icon: "👨\u200d💻",
     name: "Plan Diseñador Junior",
     price: "299",
-    period: "/único",
+    period: "/año",
     featured: false,
     support: "🎧 Soporte Básico por 1 Año",
     features: [
@@ -79,10 +79,10 @@ const PLANS = [
   },
   {
     id: 5,
-    icon: "👩\u200d💻",
+    icon: "👨‍💼",
     name: "Plan Diseñador Senior",
     price: "499",
-    period: "/único",
+    period: "/año",
     featured: true,
     support: "🎧 Soporte Prioritario por 1 Año",
     features: [
@@ -98,7 +98,7 @@ const PLANS = [
     icon: "🏢",
     name: "Plan Diseñador Agencia",
     price: "899",
-    period: "/único",
+    period: "/año",
     featured: false,
     support: "🎧 Soporte Dedicado por 1 Año",
     features: [
@@ -116,7 +116,7 @@ const PLANS = [
     icon: "🔌",
     name: "Plugin WordPress",
     price: "200",
-    period: "/único",
+    period: "/año",
     featured: false,
     support: "🎧 Soporte Básico por 1 Año",
     features: [
@@ -128,10 +128,10 @@ const PLANS = [
   },
   {
     id: 8,
-    icon: "🔌",
+    icon: "🌐",
     name: "Plugin WordPress Agencias",
     price: "499",
-    period: "/único",
+    period: "/año",
     featured: true,   // Más popular de la fila 3
     support: "🎧 Soporte Prioritario por 1 Año",
     features: [
