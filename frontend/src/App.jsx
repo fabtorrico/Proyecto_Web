@@ -3,6 +3,7 @@ import Home               from "./pages/Home";
 import Login              from "./pages/Login";
 import PoliticaPrivacidad from "./pages/PoliticaPrivacidad";
 import Dashboard          from "./pages/Dashboard";
+import Register           from "./pages/Register";
 // Vista pública del libro de reclamaciones — accesible por clientes externos
 import PublicClaimBook    from "./pages/PublicClaimBook";
 // Vista imprimible del aviso del libro para tienda física
@@ -13,6 +14,7 @@ function App() {
     <Routes>
       <Route path="/"                    element={<Home />} />
       <Route path="/login"               element={<Login />} />
+      <Route path="/registro"             element={<Register />} />
       <Route path="/politica-privacidad" element={<PoliticaPrivacidad />} />
       <Route path="/dashboard"           element={<Dashboard />} />
       {/* Ruta pública única por empresa: /libro/:slug */}

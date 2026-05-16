@@ -302,3 +302,96 @@ export const updateUserPassword = async (req, res) => {
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
+
+// ── register ──────────────────────────────────────────────────
+// Crea un nuevo usuario en la tabla users.
+// Ruta pública — NO requiere JWT.
+// La contraseña SIEMPRE se guarda con bcrypt (nunca en texto plano).
+// Valida: campos obligatorios, correo válido, correo único, RUC 11 dígitos,
+// contraseña mínimo 6 caracteres, URLs opcionales bien formadas.
+export const register = async (req, res) => {
+  try {
+    const {
+      nombre,
+      apellido,
+      correo,
+      password,
+      web,
+      razon_social,
+      ruc,
+      direccion,
+      logo_url,
+    } = req.body;
+
+    // Validar campos obligatorios
+    if (!nombre || !apellido || !correo || !password || !razon_social || !ruc || !direccion) {
+      return res.status(400).json({ error: "Debe completar todos los campos obligatorios" });
+    }
+
+    // Validar formato de correo
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(correo)) {
+      return res.status(400).json({ error: "Correo electrónico inválido" });
+    }
+
+    // RUC debe tener exactamente 11 dígitos numéricos
+    const rucRegex = /^\d{11}$/;
+    if (!rucRegex.test(ruc)) {
+      return res.status(400).json({ error: "El RUC debe tener exactamente 11 dígitos" });
+    }
+
+    // Contraseña mínima de 6 caracteres
+    if (password.length < 6) {
+      return res.status(400).json({ error: "La contraseña debe tener al menos 6 caracteres" });
+    }
+
+    // Validar URL web si fue proporcionada
+    if (web && web.trim() !== "") {
+      try { new URL(web); } catch {
+        return res.status(400).json({ error: "La URL web no es válida" });
+      }
+    }
+
+    // Validar URL del logo si fue proporcionada
+    if (logo_url && logo_url.trim() !== "") {
+      try { new URL(logo_url); } catch {
+        return res.status(400).json({ error: "La URL del logo no es válida" });
+      }
+    }
+
+    // Verificar que el correo no esté ya registrado
+    const [existingUser] = await pool.query(
+      "SELECT id FROM users WHERE correo = ?",
+      [correo.trim().toLowerCase()]
+    );
+    if (existingUser.length > 0) {
+      return res.status(409).json({ error: "El correo ya está registrado" });
+    }
+
+    // Hash de la contraseña con bcrypt — factor de costo 10
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await pool.query(
+      `INSERT INTO users
+         (nombre, apellido, correo, password, web, razon_social, ruc, direccion, logo_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        nombre.trim(),
+        apellido.trim(),
+        correo.trim().toLowerCase(),
+        hashedPassword,
+        web        || "",
+        razon_social.trim(),
+        ruc.trim(),
+        direccion.trim(),
+        logo_url   || "",
+      ]
+    );
+
+    return res.status(201).json({ message: "Usuario registrado correctamente" });
+
+  } catch (error) {
+    console.error("[authController] register error:", error);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+};

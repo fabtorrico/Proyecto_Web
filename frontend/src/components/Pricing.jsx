@@ -110,54 +110,6 @@ const PLANS = [
     ],
   },
 
-  // ── Fila 3: Plugins y Desarrollo ──
-  {
-    id: 7,
-    icon: "🔌",
-    name: "Plugin WordPress",
-    price: "200",
-    period: "/año",
-    featured: false,
-    support: "🎧 Soporte Básico por 1 Año",
-    features: [
-      "Integración con WordPress",
-      "Formulario Personalizable",
-      "PDFs Automáticos",
-      "Soporte Básico por 1 Año",
-    ],
-  },
-  {
-    id: 8,
-    icon: "🌐",
-    name: "Plugin WordPress Agencias",
-    price: "499",
-    period: "/año",
-    featured: true,   // Más popular de la fila 3
-    support: "🎧 Soporte Prioritario por 1 Año",
-    features: [
-      "Integración con WordPress",
-      "Formulario Personalizable",
-      "PDFs Automáticos",
-      "Soporte Básico por 1 Año",
-      "Instalación en 7 Páginas Web",
-      "Instalación para 7 RUC",
-    ],
-  },
-  {
-    id: 9,
-    icon: "⚙️",
-    name: "Desarrollo a Medida",
-    price: null,           // null → muestra "Precio a Tratar" en lugar de S/
-    period: "",
-    featured: false,
-    support: "🎧 Soporte y Mantenimiento Incluido",
-    features: [
-      "Integración con WordPress",
-      "Formulario Personalizable",
-      "PDFs Automáticos",
-      "Soporte Básico por 1 Año",
-    ],
-  },
 ];
 
 // ──────────────────────────────────────────────────────────

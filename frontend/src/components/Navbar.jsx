@@ -47,15 +47,29 @@ const Navbar = () => {
           <span>LR</span>Peru
         </a>
 
-        {/* ── Botón de acceso ──
-             onClick navega a /login sin recargar la página gracias a useNavigate */}
-        <button
-          className="navbar__btn"
-          aria-label="Ingresar al sistema"
-          onClick={() => navigate("/login")} /* Redirige a la página de login */
-        >
-          Ingresa
-        </button>
+        {/* ── Botones de acceso ──
+             Orden visual: [Registrar] [Ingresa]
+             Registrar: acceso a la futura vista de signup (por ahora en blanco).
+             Ingresa: acceso al login existente. */}
+        <div style={{ display: "flex", gap: "12px" }}>
+          {/* Botón Registrar — navega a /registro (vista en blanco por ahora) */}
+          <button
+            className="navbar__btn"
+            aria-label="Registrar una cuenta"
+            onClick={() => navigate("/registro")}
+          >
+            Registrar
+          </button>
+
+          {/* Botón Ingresa — navega a /login (comportamiento original) */}
+          <button
+            className="navbar__btn"
+            aria-label="Ingresar al sistema"
+            onClick={() => navigate("/login")}
+          >
+            Ingresa
+          </button>
+        </div>
 
       </div>
     </nav>

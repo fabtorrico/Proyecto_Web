@@ -4,7 +4,7 @@
 // ============================================================
 
 import express from "express";
-import { login, getUser, updateUserProfile, updateBusinessData, updateUserPassword } from "../controllers/authController.js";
+import { login, register, getUser, updateUserProfile, updateBusinessData, updateUserPassword } from "../controllers/authController.js";
 // Middleware que verifica el JWT en el header Authorization de cada petición privada
 import { verifyToken } from "../middlewares/authMiddleware.js";
 
@@ -12,6 +12,10 @@ const router = express.Router();
 
 // POST /api/login
 router.post("/login", login);
+
+// POST /api/register — ruta pública, no requiere JWT
+// Crea un nuevo usuario con contraseña hasheada con bcrypt
+router.post("/register", register);
 
 // GET /api/user/:id — devuelve datos frescos del usuario desde la BD
 router.get("/user/:id", verifyToken, getUser);
