@@ -204,6 +204,7 @@ function Register() {
           className="login-back"
           type="button"
           onClick={() => navigate("/")}
+          style={{ display: "block", margin: "0 auto" }}
         >
           ← Volver al inicio
         </button>

@@ -1234,6 +1234,14 @@ html {
   margin-top: 10px;
 }
 
+/* Shown near tabs when user tries to access Integracion without an active plan */
+.plan-message {
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
 /* Input del date picker en PublicClaimBook */
 .claim-date-input {
   width: 100%;

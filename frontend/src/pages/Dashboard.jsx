@@ -275,6 +275,10 @@ function Dashboard() {
   const [passwordSuccessMessage, setPasswordSuccessMessage] = useState("");
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
 
+  // planMessage: shown near the tabs when user tries to enter Integracion without
+  // an active plan. Disappears after 3 seconds automatically.
+  const [planMessage, setPlanMessage] = useState("");
+
   // ── Carga de datos frescos desde la base de datos ────
   // Se ejecuta cuando el usuario está disponible.
   // Evita mostrar datos desactualizados de localStorage.
@@ -302,8 +306,27 @@ function Dashboard() {
       .catch((err) => console.error("[Dashboard] fetch user error:", err));
   }, [user?.id]);
 
-  // Reiniciar paginación al cambiar de tab
+  // hasActivePlan: returns true when the user has a plan whose end date has not
+  // yet passed. Both plan_duracion and fecha_fin_plan must be non-null (they are
+  // NULL for users registered without a paid plan).
+  // TODO: integrate with MercadoPago payment flow so this flag is set on purchase.
+  const hasActivePlan = () => {
+    if (!user?.plan_duracion || !user?.fecha_fin_plan) return false;
+    const today   = new Date();
+    const endDate = new Date(user.fecha_fin_plan);
+    today.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+    return endDate >= today;
+  };
+
+  // handleTabChange: blocks navigation to Integracion if the user has no active
+  // plan. Shows a temporary message and leaves the current tab unchanged.
   const handleTabChange = (tab) => {
+    if (tab === "Integración" && !hasActivePlan()) {
+      setPlanMessage("Debes adquirir un plan para usar Integración.");
+      setTimeout(() => setPlanMessage(""), 3000);
+      return;
+    }
     setActiveTab(tab);
   };
 
@@ -843,6 +866,8 @@ function Dashboard() {
         }}>
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
+            // isLocked: Integracion tab is disabled when the user has no active plan
+            const isLocked = tab === "Integración" && !hasActivePlan();
             return (
               <button
                 key={tab}
@@ -851,22 +876,30 @@ function Dashboard() {
                   padding: "8px 18px",
                   fontSize: "14px",
                   fontWeight: isActive ? 700 : 400,
-                  cursor: "pointer",
+                  cursor: isLocked ? "not-allowed" : "pointer",
                   border: isActive ? "1px solid #e5e7eb" : "1px solid transparent",
                   borderBottom: isActive ? "2px solid #fff" : "none",
                   borderTop: isActive ? "3px solid #1e3a8a" : "3px solid transparent",
                   borderRadius: "6px 6px 0 0",
                   background: isActive ? "#fff" : "#f3f4f6",
                   color: isActive ? "#111827" : "#6b7280",
-                  marginBottom: "-1px", // fusiona con el borde inferior del contenedor
+                  marginBottom: "-1px",
                   transition: "all 0.15s",
+                  opacity: isLocked ? 0.5 : 1,
                 }}
               >
-                {tab}
+                {isLocked ? `${tab} 🔒` : tab}
               </button>
             );
           })}
         </div>
+
+        {/* Plan message: appears for 3 s when user clicks Integracion without a plan */}
+        {planMessage && (
+          <p className="plan-message" style={{ padding: "6px 16px 0" }}>
+            {planMessage}
+          </p>
+        )}
 
         {/* ── Contenido de cada pestaña ───────────────── */}
         <div style={{ padding: "20px" }}>
@@ -894,8 +927,17 @@ function Dashboard() {
             />
           )}
 
-          {/* PESTAÑA: Integración */}
-          {activeTab === "Integración" && (
+          {/* PESTAÑA: Integracion */}
+          {/* Security guard: if user somehow lands here without a plan, show restricted notice */}
+          {activeTab === "Integración" && !hasActivePlan() && (
+            <div style={{ padding: "40px 20px", textAlign: "center" }}>
+              <p style={{ color: "#dc2626", fontSize: "16px", fontWeight: 600 }}>
+                Acceso restringido. Debes adquirir un plan activo para usar esta seccion.
+              </p>
+            </div>
+          )}
+          {/* Full integration panel — only rendered when plan is active */}
+          {activeTab === "Integración" && hasActivePlan() && (
             <div className="integration-panel">
               <h2 className="integration-panel__title">Herramientas de Integración</h2>
 

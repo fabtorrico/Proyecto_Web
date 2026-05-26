@@ -5,7 +5,7 @@
 // ============================================================
 
 import "../assets/css/home.css";                      // Estilos globales
-import libroImg    from "../assets/img/libro.png";    // Imagen oficial del libro de reclamaciones
+import libroImg    from "../assets/img/libro_main.png";    // Imagen oficial del libro de reclamaciones
 import facebookImg from "../assets/img/facebook.png"; // Icono de Facebook
 import instagramImg from "../assets/img/instagram.png"; // Icono de Instagram
 import whatsappImg from "../assets/img/whatsapp.png"; // Icono de WhatsApp

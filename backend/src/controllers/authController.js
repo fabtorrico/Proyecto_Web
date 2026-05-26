@@ -60,19 +60,24 @@ export const login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // Devolver token + datos del usuario (sin password)
+    // Devolver token + datos del usuario (sin password).
+    // Se incluyen los campos de plan para que el frontend pueda
+    // verificar si el usuario tiene un plan activo (hasActivePlan).
     return res.json({
       token,
       user: {
-        id:          user.id,
-        nombre:      user.nombre,
-        apellido:    user.apellido,
-        correo:      user.correo,
-        web:         user.web,
-        razon_social: user.razon_social,
-        ruc:         user.ruc,
-        direccion:   user.direccion,
-        logo_url:    user.logo_url,
+        id:                user.id,
+        nombre:            user.nombre,
+        apellido:          user.apellido,
+        correo:            user.correo,
+        web:               user.web,
+        razon_social:      user.razon_social,
+        ruc:               user.ruc,
+        direccion:         user.direccion,
+        logo_url:          user.logo_url,
+        plan_duracion:     user.plan_duracion     || null,
+        fecha_inicio_plan: user.fecha_inicio_plan || null,
+        fecha_fin_plan:    user.fecha_fin_plan     || null,
       },
     });
 
@@ -98,7 +103,7 @@ export const getUser = async (req, res) => {
     }
 
     const [rows] = await pool.query(
-      "SELECT id, nombre, apellido, correo, web, razon_social, ruc, direccion, logo_url FROM users WHERE id = ?",
+      "SELECT id, nombre, apellido, correo, web, razon_social, ruc, direccion, logo_url, plan_duracion, fecha_inicio_plan, fecha_fin_plan FROM users WHERE id = ?",
       [parseInt(id)]
     );
 
@@ -158,7 +163,7 @@ export const updateUserProfile = async (req, res) => {
 
     // Devolver el usuario actualizado (sin password)
     const [updatedRows] = await pool.query(
-      "SELECT id, nombre, apellido, correo, web, razon_social, ruc, direccion, logo_url FROM users WHERE id = ?",
+      "SELECT id, nombre, apellido, correo, web, razon_social, ruc, direccion, logo_url, plan_duracion, fecha_inicio_plan, fecha_fin_plan FROM users WHERE id = ?",
       [parseInt(id)]
     );
 
@@ -224,7 +229,7 @@ export const updateBusinessData = async (req, res) => {
 
     // Devolver el usuario actualizado (sin password)
     const [updatedRows] = await pool.query(
-      "SELECT id, nombre, apellido, correo, web, razon_social, ruc, direccion, logo_url FROM users WHERE id = ?",
+      "SELECT id, nombre, apellido, correo, web, razon_social, ruc, direccion, logo_url, plan_duracion, fecha_inicio_plan, fecha_fin_plan FROM users WHERE id = ?",
       [parseInt(id)]
     );
 
@@ -373,18 +378,23 @@ export const register = async (req, res) => {
 
     await pool.query(
       `INSERT INTO users
-         (nombre, apellido, correo, password, web, razon_social, ruc, direccion, logo_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (nombre, apellido, correo, password, web, razon_social, ruc, direccion, logo_url,
+          plan_duracion, fecha_inicio_plan, fecha_fin_plan)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL)`,
+      // plan_duracion / fecha_inicio_plan / fecha_fin_plan quedan NULL:
+      // el usuario se registra sin plan activo.
+      // El plan se activara despues del pago; hasta entonces el acceso
+      // a la integracion quedara bloqueado segun estos campos.
       [
         nombre.trim(),
         apellido.trim(),
         correo.trim().toLowerCase(),
         hashedPassword,
-        web        || "",
+        web          || "",
         razon_social.trim(),
         ruc.trim(),
         direccion.trim(),
-        logo_url   || "",
+        logo_url     || "",
       ]
     );
 
