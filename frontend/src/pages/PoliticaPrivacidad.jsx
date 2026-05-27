@@ -17,7 +17,7 @@ function PoliticaPrivacidad() {
       >
         <img
           src={imgTop}
-          alt="Politica de Privacidad - LRPeru"
+          alt="Politica de Privacidad - CERTIA"
           className="policy-banner"
           style={{ cursor: "pointer" }}
           onError={(e) => { e.target.style.display = "none"; }}
@@ -53,7 +53,7 @@ function PoliticaPrivacidad() {
             <h1>Politicas de privacidad</h1>
 
             <h2>Politica de Privacidad</h2>
-            <p>La presente Politica de Privacidad de Datos Personales (en adelante, Politica de Privacidad) tiene como proposito explicarle como INVESTMENTS AND TECHNOLOGY AC S.A.C. (en adelante, I&T), con R.U.C. N 20603209592 y domicilio en Av. Luis Braille 1394, Oficina 908, Lima, lleva a cabo el tratamiento de los datos personales que obtiene de sus usuarios a traves de formularios electronicos disponibles en el sitio web https://lrperu.com/ (en adelante, Sitio Web), asi como mediante consentimientos expresos otorgados por escrito o en linea.</p>
+            <p>La presente Politica de Privacidad de Datos Personales (en adelante, Politica de Privacidad) tiene como proposito explicarle como INVESTMENTS AND TECHNOLOGY AC S.A.C. (en adelante, I&T), con R.U.C. N 20603209592 y domicilio en Av. Luis Braille 1394, Oficina 908, Lima, lleva a cabo el tratamiento de los datos personales que obtiene de sus usuarios a traves de formularios electronicos disponibles en el sitio web https://certia.com/ (en adelante, Sitio Web), asi como mediante consentimientos expresos otorgados por escrito o en linea.</p>
             <p>En esta Politica de Privacidad, nosotros hace referencia a I&T, mientras que Usuario se refiere a toda persona que navegue, utilice o realice transacciones a traves del Sitio Web. En I&T nos comprometemos a garantizar la maxima seguridad y confidencialidad de los datos personales de nuestros usuarios.</p>
             <p>Le invitamos a leer atentamente esta Politica de Privacidad antes de compartir sus datos personales de manera voluntaria. Si esta de acuerdo, le pedimos que marque la casilla de aceptacion de forma previa y expresa. Estos datos son indispensables para cumplir con los objetivos descritos en este documento; de no autorizar su tratamiento, no podriamos llevar a cabo dichas finalidades.</p>
 
@@ -110,7 +110,7 @@ function PoliticaPrivacidad() {
             <p>El Sitio Web emplea cookies para optimizar la experiencia de navegacion, analizar patrones de uso y personalizar contenidos. El usuario puede desactivarlas en su navegador sin que ello limite el acceso al sitio. I&T no controla las cookies de sitios de terceros vinculados.</p>
 
             <h2>Derechos del Usuario</h2>
-            <p>El usuario puede ejercer sus derechos de acceso, rectificacion, cancelacion y oposicion enviando un correo a soporte@lrperu.com. Determinados datos podran conservarse tras una solicitud de baja como evidencia ante posibles reclamaciones, sin realizar mas tratamiento que su almacenamiento seguro, por el plazo legal de prescripcion.</p>
+            <p>El usuario puede ejercer sus derechos de acceso, rectificacion, cancelacion y oposicion enviando un correo a soporte@certia.com. Determinados datos podran conservarse tras una solicitud de baja como evidencia ante posibles reclamaciones, sin realizar mas tratamiento que su almacenamiento seguro, por el plazo legal de prescripcion.</p>
 
             <h2>Edad Minima</h2>
             <p>El usuario declara tener al menos 18 anos o ser tutor legal de un menor para autorizar el tratamiento de datos. I&T no procesara datos de menores sin el debido consentimiento y eliminara aquellos detectados sin autorizacion.</p>
@@ -127,9 +127,9 @@ function PoliticaPrivacidad() {
             <p>Una plataforma innovadora para la gestion eficiente de procesos digitales, alineada con la normativa peruana.</p>
             <p>Menu: Como funciona | Quienes Somos | Planes y Precios | Soporte Tecnico | Blog | Preguntas Frecuentes | Legales | Contacto</p>
             <p>(+51) 944 495 321</p>
-            <p>soporte@lrperu.com</p>
+            <p>soporte@certia.com</p>
             <p>Av. Luis Braille 1394, Oficina 908 - Lima, Peru</p>
-            <p>atencion@lrperu.com</p>
+            <p>atencion@certia.com</p>
             <p><strong>INVESTMENTS AND TECHNOLOGY AC S.A.C. | RUC: 20603209592</strong></p>
             <p>Copyright 2025 - I&T Soluciones | Diseno Web por I&T</p>
 
@@ -144,7 +144,7 @@ function PoliticaPrivacidad() {
             >
               <img
                 src={imgSide}
-                alt="LRPeru - Libro de Reclamaciones"
+                alt="CERTIA - Libro de Reclamaciones"
                 style={{ cursor: "pointer" }}
                 onError={(e) => { e.target.style.display = "none"; }}
               />
@@ -157,7 +157,7 @@ function PoliticaPrivacidad() {
       {/* Pie de pagina azul */}
       <footer style={{ backgroundColor: "#1e3a8a", padding: "24px 20px", textAlign: "center" }}>
         <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", margin: 0 }}>
-          {new Date().getFullYear()} LRPeru. Todos los derechos reservados.
+          {new Date().getFullYear()} CERTIA. Todos los derechos reservados.
         </p>
       </footer>
 

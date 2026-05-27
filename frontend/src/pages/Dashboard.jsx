@@ -582,7 +582,7 @@ function Dashboard() {
     .trim()
     .replace(/\s+/g, "-");
   // Usa window.location.origin para funcionar en local (localhost:5173)
-  // y en producción (https://lrperu.com) sin cambios de código.
+  // y en producción (https://certia.com) sin cambios de código.
   const userBookUrl = `${window.location.origin}/libro/${userSlug}`;
 
   // Mapa de tamaños del widget

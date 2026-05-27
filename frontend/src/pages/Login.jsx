@@ -76,7 +76,7 @@ function Login() {
       {/* Logo de la marca — imagen en /public/logo.png */}
       <img
         src="/logo.png"
-        alt="Logo LRPeru"
+        alt="Logo CERTIA"
         className="login-logo"
         onError={(e) => { e.target.style.display = "none"; }}
       />

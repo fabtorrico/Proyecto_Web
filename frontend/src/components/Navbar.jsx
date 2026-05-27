@@ -3,9 +3,10 @@
 // Fija en la parte superior, sombra al hacer scroll
 // ============================================================
 
-import { useEffect, useState } from "react";         // Hooks de React
-import { useNavigate } from "react-router-dom";      // Hook para navegación programativa
-import "../assets/css/home.css";                     // Estilos del proyecto
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "../assets/css/home.css";
+import logoImg from "../assets/img/logo.png";
 
 // ──────────────────────────────────────────────────────────
 // Componente Navbar
@@ -43,8 +44,7 @@ const Navbar = () => {
 
         {/* ── Logo / Nombre de la marca ── */}
         <a href="#inicio" className="navbar__logo" aria-label="Ir al inicio">
-          {/* "LR" en azul, "Peru" en texto oscuro */}
-          <span>LR</span>Peru
+          <img src={logoImg} alt="CERTIA.PE" style={{ height: "40px", width: "auto" }} />
         </a>
 
         {/* ── Botones de acceso ──

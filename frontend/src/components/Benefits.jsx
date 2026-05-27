@@ -1,5 +1,5 @@
 // ============================================================
-// Benefits.jsx — Sección "¿Por Qué Elegir LRPeru?"
+// Benefits.jsx — Sección "¿Por Qué Elegir CERTIA?"
 // Enfoque: razones de diferenciación, NO lista de características.
 // El objetivo es generar confianza y reducir fricción de compra.
 // ============================================================
@@ -7,7 +7,7 @@
 import "../assets/css/home.css"; // Estilos del proyecto
 
 // ──────────────────────────────────────────────────────────
-// Lista de razones para elegir LRPeru.
+// Lista de razones para elegir CERTIA.
 // Cada objeto: id, ícono emoji, título y descripción persuasiva.
 // Definido fuera del componente para evitar recreaciones en cada render.
 // ──────────────────────────────────────────────────────────
@@ -61,7 +61,7 @@ const Benefits = () => {
       <div className="container">
 
         {/* ── Título principal — enfocado en diferenciación, no en características ── */}
-        <h2 className="section__title benefits__title">¿Por Qué Elegir LRPeru?</h2>
+        <h2 className="section__title benefits__title">¿Por Qué Elegir <span style={{ color: "#1e3a8a", fontWeight: 700 }}>CERTIA</span>?</h2>
 
         {/* ── Grid de cards ── */}
         <div className="benefits__grid">

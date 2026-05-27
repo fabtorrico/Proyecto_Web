@@ -1,10 +1,11 @@
 // ============================================================
 // Footer.jsx — Pie de página
-// 4 columnas: LRPeru / Legal / Enlaces Útiles / Contáctanos
+// 4 columnas: CERTIA / Legal / Enlaces Útiles / Contáctanos
 // Fondo azul corporativo #1e3a8a
 // ============================================================
 
 import "../assets/css/home.css";                      // Estilos globales
+import logoImg from "../assets/img/logo.png";        // Logo de la marca
 import libroImg    from "../assets/img/libro_main.png";    // Imagen oficial del libro de reclamaciones
 import facebookImg from "../assets/img/facebook.png"; // Icono de Facebook
 import instagramImg from "../assets/img/instagram.png"; // Icono de Instagram
@@ -26,7 +27,7 @@ const Footer = () => {
         <div>
           {/* Nombre de la marca con acento de color */}
           <p className="footer__brand">
-            <span>LR</span>Peru
+            CERTIA<span style={{ color: "#ef4444" }}>.PE</span>
           </p>
           {/* Descripción breve del servicio */}
           <p className="footer__tagline">
@@ -77,8 +78,8 @@ const Footer = () => {
           <h3 className="footer__col-title">Contáctanos</h3>
           <ul className="footer__list">
             <li>
-              <a href="mailto:soporte@lrperu.com" aria-label="Enviar correo">
-                📧 soporte@lrperu.com
+              <a href="mailto:soporte@certia.com" aria-label="Enviar correo">
+                📧 soporte@certia.com
               </a>
             </li>
             <li>
@@ -162,7 +163,7 @@ const Footer = () => {
 
       {/* ── Copyright centrado al fondo ── */}
       <div className="footer__bottom">
-        <p>© {currentYear} LRPeru. Todos los derechos reservados.</p>
+        <p>© {currentYear} CERTIA. Todos los derechos reservados.</p>
       </div>
 
     </footer>

@@ -37,7 +37,7 @@ const Hero = () => {
           </span>
 
           {/* ── Título principal ──
-               Color azul corporativo #1e3a8a (no negro).
+               Color azul corporativo #1e3b8a77 (no negro).
                Tamaño grande para máximo impacto visual. */}
           <h1 className="hero__title">
             Libro de Reclamaciones Virtual para Negocios en Perú

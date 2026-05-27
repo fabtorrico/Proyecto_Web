@@ -23,7 +23,7 @@ const TESTIMONIALS = [
   },
   {
     id: 2,
-    text: "Nos evitó una multa de INDECOPI. Antes no teníamos el libro y no sabíamos cómo implementarlo. Con LRPeru fue rapidísimo y muy profesional.",
+    text: "Nos evitó una multa de INDECOPI. Antes no teníamos el libro y no sabíamos cómo implementarlo. Con CERTIA fue rapidísimo y muy profesional.",
     name: "María Torres",
     business: "Restaurante — Miraflores",
     stars: 5,

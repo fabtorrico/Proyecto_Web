@@ -19,17 +19,17 @@ const STEPS = [
   {
     id: 2,
     title: "Te Creamos la Cuenta",
-    desc: "Creamos la cuenta en LRPeru, configuramos tu negocio y recibes tu usuario y contraseña en minutos.",
+    desc: "Creamos la cuenta en CERTIA, configuramos tu negocio y recibes tu usuario y contraseña en minutos.",
   },
   {
     id: 3,
     title: "Recibe tu Contrato y Manuales",
-    desc: "Obtén tu contrato del servicio junto con guías detalladas para empezar a usar LRPeru.",
+    desc: "Obtén tu contrato del servicio junto con guías detalladas para empezar a usar CERTIA.",
   },
   {
     id: 4,
     title: "Gestionas reclamaciones",
-    desc: "Administra todas las reclamaciones desde tu panel en lrperu.com, con enlace y QR personalizados.",
+    desc: "Administra todas las reclamaciones desde tu panel en certia.com, con enlace y QR personalizados.",
   },
 ];
 
@@ -44,7 +44,7 @@ const HowItWorks = () => {
       <div className="container">
 
         {/* ── Título de la sección ── */}
-        <h2 className="section__title">¿Cómo funciona LRPeru?</h2>
+        <h2 className="section__title">¿Cómo funciona <span style={{ color: "#1e3a8a", fontWeight: 700 }}>CERTIA</span>?</h2>
 
         {/* ── Grid de pasos ── */}
         <div className="steps__grid">

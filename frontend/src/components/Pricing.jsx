@@ -59,57 +59,6 @@ const PLANS = [
       "1 Usuario, 1 RUC",
     ],
   },
-
-  // ── Fila 2: Planes para Diseñadores Web ──
-  {
-    id: 4,
-    icon: "👨\u200d💻",
-    name: "Plan Diseñador Junior",
-    price: "299",
-    period: "/año",
-    featured: false,
-    support: "🎧 Soporte Básico por 1 Año",
-    features: [
-      "Enlace y QR Personalizado",
-      "Formulario de Reclamaciones",
-      "PDFs Automáticos",
-      "3 Usuarios",
-      "3 RUC",
-    ],
-  },
-  {
-    id: 5,
-    icon: "👨‍💼",
-    name: "Plan Diseñador Senior",
-    price: "499",
-    period: "/año",
-    featured: true,
-    support: "🎧 Soporte Prioritario por 1 Año",
-    features: [
-      "Enlace y QR Personalizado",
-      "Formulario de Reclamaciones",
-      "PDFs Automáticos",
-      "7 Usuarios",
-      "7 RUC",
-    ],
-  },
-  {
-    id: 6,
-    icon: "🏢",
-    name: "Plan Diseñador Agencia",
-    price: "899",
-    period: "/año",
-    featured: false,
-    support: "🎧 Soporte Dedicado por 1 Año",
-    features: [
-      "Enlace y QR Personalizado",
-      "Formulario de Reclamaciones",
-      "PDFs Automáticos",
-      "15 Usuarios",
-      "15 RUC",
-    ],
-  },
-
 ];
 
 // ──────────────────────────────────────────────────────────
