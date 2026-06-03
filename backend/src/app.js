@@ -47,19 +47,31 @@ app.use("/api", authRoutes);
 // Rutas públicas del libro de reclamaciones (sin JWT)
 app.use("/api", claimRoutes);
 
-// ── Frontend React (producción) ───────────────────────────
+// ── Frontend React (produccion) ───────────────────────────
 // El build de Vite se copia en backend/public antes del deploy.
-// app.js está en backend/src, así que "../public" apunta a backend/public.
-// express.static sirve los assets (JS, CSS, imágenes).
-// El catch-all "*" devuelve index.html para que React Router maneje
-// rutas como /login, /registro, /dashboard sin un 404 del servidor.
-// Este bloque debe ir DESPUÉS de /api y /uploads para no interceptarlos.
+// app.js esta en backend/src, asi que "../public" apunta a backend/public.
+// express.static sirve assets concretos (JS, CSS, imagenes, favicons).
 const frontendPath = path.join(__dirname, "../public");
 
 app.use(express.static(frontendPath));
 
-app.get("*", (_req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
+// Fallback SPA para React Router.
+// React Router maneja rutas del lado del cliente (/login, /dashboard, etc.).
+// Cuando el usuario recarga o accede directamente a esas URLs, el servidor
+// no tiene esas rutas registradas y devolveria 404.
+// La solucion es devolver index.html para cualquier ruta que NO sea /api
+// ni /uploads — React toma el control desde ahi.
+// Se usa app.use con middleware en lugar de app.get("*") para evitar
+// conflictos con algunos proxies y plataformas de hosting que interpretan
+// el wildcard de forma diferente y pueden causar 503.
+app.use((req, res, next) => {
+  // Dejar pasar peticiones al backend sin tocarlas
+  if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
+    return next();
+  }
+  // Para cualquier otra ruta: entregar index.html y dejar que React Router
+  // decida qué componente renderizar segun la URL.
+  return res.sendFile(path.join(frontendPath, "index.html"));
 });
 
 // ── Iniciar servidor ──────────────────────────────────────
