@@ -47,9 +47,19 @@ app.use("/api", authRoutes);
 // Rutas públicas del libro de reclamaciones (sin JWT)
 app.use("/api", claimRoutes);
 
-// ── Healthcheck básico ────────────────────────────────────
-app.get("/", (_req, res) => {
-  res.json({ status: "ok", mensaje: "Servidor LRPeru en funcionamiento" });
+// ── Frontend React (producción) ───────────────────────────
+// El build de Vite se copia en backend/public antes del deploy.
+// app.js está en backend/src, así que "../public" apunta a backend/public.
+// express.static sirve los assets (JS, CSS, imágenes).
+// El catch-all "*" devuelve index.html para que React Router maneje
+// rutas como /login, /registro, /dashboard sin un 404 del servidor.
+// Este bloque debe ir DESPUÉS de /api y /uploads para no interceptarlos.
+const frontendPath = path.join(__dirname, "../public");
+
+app.use(express.static(frontendPath));
+
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
 
 // ── Iniciar servidor ──────────────────────────────────────
