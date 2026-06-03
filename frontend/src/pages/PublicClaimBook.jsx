@@ -15,6 +15,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { API_URL } from "../config/api";
 // react-datepicker: selector de fecha visual con calendario popup
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -372,7 +373,7 @@ function PublicClaimBook() {
         formData.append("archivo_adjunto", claimForm.archivo_adjunto);
       }
 
-      const res = await fetch("http://localhost:3000/api/claims", {
+      const res = await fetch(`${API_URL}/claims`, {
         method: "POST",
         // Sin header Content-Type: el navegador lo pone automáticamente con el boundary
         body: formData,

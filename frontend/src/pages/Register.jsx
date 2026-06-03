@@ -1,6 +1,7 @@
 ﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../assets/css/home.css";
+import { API_URL } from "../config/api";
 
 function Register() {
   const navigate = useNavigate();
@@ -57,7 +58,7 @@ function Register() {
 
       setIsRegistering(true);
 
-      const res = await fetch("http://localhost:3000/api/register", {
+      const res = await fetch(`${API_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(registerForm),

@@ -7,9 +7,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../assets/css/home.css";
-
-// URL base del backend — en producción cambiar por variable de entorno
-const API_URL = "http://localhost:3000/api";
+// API_URL centralizada: usa VITE_API_URL de .env (dev) o .env.production (prod)
+import { API_URL } from "../config/api";
 
 function Login() {
   // ── Estado del formulario ──

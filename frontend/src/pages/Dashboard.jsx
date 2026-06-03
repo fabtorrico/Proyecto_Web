@@ -7,6 +7,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+// API_URL: URL base del backend (cambia entre dev y prod via VITE_API_URL)
+// SERVER_URL: raiz del servidor, para archivos estaticos /uploads
+import { API_URL, SERVER_URL } from "../config/api";
 // Librería para generar el código QR como elemento canvas
 import { QRCodeCanvas } from "qrcode.react";
 // Imagen del libro usada en la vista previa del widget de integración
@@ -284,7 +287,7 @@ function Dashboard() {
   // Evita mostrar datos desactualizados de localStorage.
   useEffect(() => {
     if (!user?.id) return;
-    fetch(`http://localhost:3000/api/user/${user.id}`, {
+    fetch(`${API_URL}/user/${user.id}`, {
       headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
     })
       .then((res) => res.json())
@@ -342,7 +345,7 @@ function Dashboard() {
       setPendingLoading(true);
       setPendingError("");
 
-      const res  = await fetch("http://localhost:3000/api/claims/pending", {
+      const res  = await fetch(`${API_URL}/claims/pending`, {
         method:  "GET",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -383,7 +386,7 @@ function Dashboard() {
       setCompletedLoading(true);
       setCompletedError("");
 
-      const res  = await fetch("http://localhost:3000/api/claims/completed", {
+      const res  = await fetch(`${API_URL}/claims/completed`, {
         method:  "GET",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -470,7 +473,7 @@ function Dashboard() {
       setIsSendingResponse(true);
 
       const res = await fetch(
-        `http://localhost:3000/api/claims/${selectedClaim.id}/respond`,
+        `${API_URL}/claims/${selectedClaim.id}/respond`,
         {
           method:  "PUT",
           headers: {
@@ -511,9 +514,9 @@ function Dashboard() {
   // ── Helpers para visualizar/descargar archivos adjuntos ──
   // Actualmente archivo_adjunto guarda solo el nombre del archivo.
   // Cuando se implemente multer/upload real, los archivos se servirán desde /uploads/claims.
-  // Apunta al backend (puerto 3000) donde Express sirve /uploads como estáticos.
+  // SERVER_URL es la raiz del servidor (sin /api) para acceder a archivos subidos.
   const getAttachmentUrl = (fileName) =>
-    `http://localhost:3000/uploads/claims/${fileName}`;
+    `${SERVER_URL}/uploads/claims/${fileName}`;
 
   const getFileExtension = (fileName = "") =>
     fileName.split(".").pop().toLowerCase();
@@ -642,10 +645,10 @@ function Dashboard() {
     // ── Logs de depuración — eliminar en producción ──
     console.log("user:", user);
     console.log("userForm:", userForm);
-    console.log("URL:", `http://localhost:3000/api/users/${user.id}/profile`);
+    console.log("URL:", `${API_URL}/users/${user.id}/profile`);
 
     try {
-      const res = await fetch(`http://localhost:3000/api/users/${user.id}/profile`, {
+      const res = await fetch(`${API_URL}/users/${user.id}/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -702,7 +705,7 @@ function Dashboard() {
       }
 
       // Llamada PUT al backend con los datos del negocio
-      const res = await fetch(`http://localhost:3000/api/users/${user.id}/business`, {
+      const res = await fetch(`${API_URL}/users/${user.id}/business`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -764,7 +767,7 @@ function Dashboard() {
       }
 
       // Llamada PUT al backend — el backend verifica la contraseña antigua
-      const res = await fetch(`http://localhost:3000/api/users/${user.id}/password`, {
+      const res = await fetch(`${API_URL}/users/${user.id}/password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
