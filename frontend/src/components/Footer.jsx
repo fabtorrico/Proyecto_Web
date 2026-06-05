@@ -42,7 +42,8 @@ const Footer = () => {
           <ul className="footer__list">
             <li><a href="/politica-privacidad">Política de Privacidad</a></li>
             <li><a href="#terminos">Términos y Condiciones</a></li>
-            <li><a href="#libro">Libro de Reclamaciones</a></li>
+            {/* Enlace corporativo: siempre abre el libro oficial de Certia (users.id=1) */}
+            <li><a href="/libro-admin">Libro de Reclamaciones</a></li>
           </ul>
 
           {/* Imagen oficial del Libro de Reclamaciones peruano */}
@@ -78,18 +79,18 @@ const Footer = () => {
           <h3 className="footer__col-title">Contáctanos</h3>
           <ul className="footer__list">
             <li>
-              <a href="mailto:soporte@certia.com" aria-label="Enviar correo">
-                📧 soporte@certia.com
+              <a href="mailto:certiaperu@certia.pe" aria-label="Enviar correo">
+                📧 certiaperu@certia.pe
               </a>
             </li>
             <li>
               <a
-                href="https://api.whatsapp.com/send/?phone=51922446325&text=Quiero+contactar&type=phone_number&app_absent=0"
+                href="https://wa.me/51940810288"
                 aria-label="Llamar por teléfono"
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                📞 +51 922 446 325
+                📞 +51 940 810 288
               </a>
             </li>
             <li>
@@ -97,12 +98,12 @@ const Footer = () => {
                    target="_blank" abre en nueva pestaña.
                    rel="noopener noreferrer" evita acceso al window de esta página. */}
               <a
-                href="https://api.whatsapp.com/send/?phone=51922446325&text=Quiero+contactar&type=phone_number&app_absent=0"
+                href="https://wa.me/51940810288"
                 aria-label="Contactar por WhatsApp"
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                💬 WhatsApp: +51 922 446 325
+                💬 WhatsApp: +51 940 810 288
               </a>
             </li>
           </ul>
@@ -119,7 +120,7 @@ const Footer = () => {
                  Enlace externo: abre WhatsApp con mensaje sobre Facebook.
                  Reemplaza href por URL real de Facebook cuando esté disponible. */}
             <a
-              href="https://api.whatsapp.com/send/?phone=51922446325&text=Quiero+seguirlos+en+Facebook&type=phone_number&app_absent=0"
+              href="https://www.facebook.com/profile.php?id=61590531545240&sk=about"
               className="footer__social-icon"
               aria-label="Síguenos en Facebook"
               rel="noopener noreferrer"
@@ -133,7 +134,7 @@ const Footer = () => {
                  Enlace externo: abre WhatsApp con mensaje sobre Instagram.
                  Reemplaza href por URL real de Instagram cuando esté disponible. */}
             <a
-              href="https://api.whatsapp.com/send/?phone=51922446325&text=Quiero+seguirlos+en+Instagram&type=phone_number&app_absent=0"
+              href="https://www.instagram.com/certiaperu/?hl=es"
               className="footer__social-icon"
               aria-label="Síguenos en Instagram"
               rel="noopener noreferrer"
@@ -146,7 +147,7 @@ const Footer = () => {
             {/* ─ WhatsApp ─
                  Enlace externo: abre WhatsApp con mensaje de contacto directo. */}
             <a
-              href="https://api.whatsapp.com/send/?phone=51922446325&text=Quiero+contactar+por+WhatsApp&type=phone_number&app_absent=0"
+              href="https://wa.me/51940810288"
               className="footer__social-icon"
               aria-label="Contáctanos por WhatsApp"
               rel="noopener noreferrer"

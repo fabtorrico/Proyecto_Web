@@ -23,13 +23,14 @@ const STEPS = [
   },
   {
     id: 3,
-    title: "Recibe tu Contrato y Manuales",
-    desc: "Obtén tu contrato del servicio junto con guías detalladas para empezar a usar CERTIA.",
+    title: "Gestionas reclamaciones",
+    desc: "Administra todas las reclamaciones desde tu panel en certia.com, con enlace y QR personalizados.",
   },
   {
     id: 4,
-    title: "Gestionas reclamaciones",
-    desc: "Administra todas las reclamaciones desde tu panel en certia.com, con enlace y QR personalizados.",
+    icon: "🤔",
+    title: "Dudas",
+    desc: "si necesita ayuda con algunas funcionalidades del servicio contactar con soporte técnico",
   },
 ];
 
@@ -55,7 +56,7 @@ const HowItWorks = () => {
 
               {/* Número grande del paso — color azul */}
               <span className="step-card__number" aria-hidden="true">
-                {step.id}
+                {step.icon || step.id}
               </span>
 
               {/* Título del paso */}

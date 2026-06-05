@@ -1,28 +1,11 @@
 ﻿import "../assets/css/home.css";
 import { useNavigate } from "react-router-dom";
-import imgTop  from "../assets/img/img1_politica.jpg";
-import imgSide from "../assets/img/img2_politica.png";
 
 function PoliticaPrivacidad() {
   const navigate = useNavigate();
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-
-      {/* Banner superior */}
-      <a
-        href="https://api.whatsapp.com/send/?phone=51922446325&text=Informaci%C3%B3n+del%20libro%20de%20reclamaciones"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <img
-          src={imgTop}
-          alt="Politica de Privacidad - CERTIA"
-          className="policy-banner"
-          style={{ cursor: "pointer" }}
-          onError={(e) => { e.target.style.display = "none"; }}
-        />
-      </a>
 
       {/* Boton de regreso */}
       <div style={{ maxWidth: "1100px", margin: "24px auto 0", padding: "0 20px", width: "100%" }}>
@@ -135,20 +118,8 @@ function PoliticaPrivacidad() {
 
           </div>
 
-          {/* Columna derecha: imagen lateral */}
+          {/* Columna derecha: sin contenido por ahora */}
           <div className="policy-side">
-            <a
-              href="https://api.whatsapp.com/send/?phone=51922446325&text=Informaci%C3%B3n+del%20libro%20de%20reclamaciones"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                src={imgSide}
-                alt="CERTIA - Libro de Reclamaciones"
-                style={{ cursor: "pointer" }}
-                onError={(e) => { e.target.style.display = "none"; }}
-              />
-            </a>
           </div>
 
         </div>

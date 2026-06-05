@@ -174,7 +174,7 @@ html {
 /* Ocupa el 100% del ancho de pantalla, sin container */
 .hero__topbar {
   width: 100%;                  /* Ancho completo — no usa .container */
-  background-color: #10b981;    /* Verde esmeralda */
+  background: linear-gradient(90deg, #C8102E, #D91023); /* Rojo bandera peruana */
   color: #ffffff;
   text-align: center;
   padding: 20px 20px;

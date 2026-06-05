@@ -33,7 +33,7 @@ const Hero = () => {
 
           {/* ── Etiqueta decorativa (badge/pill) ── */}
           <span className="hero__badge">
-            Solución oficial para negocios en Perú
+            Solución oficial para negocios en Perú 👍
           </span>
 
           {/* ── Título principal ──

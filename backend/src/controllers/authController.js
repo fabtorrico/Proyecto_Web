@@ -405,3 +405,32 @@ export const register = async (req, res) => {
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
+
+// ──────────────────────────────────────────────────────────
+// getCompanyBook
+// Ruta PUBLICA — no requiere JWT.
+// Devuelve los datos de la empresa corporativa oficial de Certia,
+// que corresponde SIEMPRE al usuario con id = 1.
+// Este endpoint es el que usa el enlace "Libro de Reclamaciones"
+// del footer: esa vista siempre muestra el libro de Certia (id=1),
+// independientemente de quien este logueado.
+// Nunca se expone el password.
+// Recibe: GET /api/company-book
+// ──────────────────────────────────────────────────────────
+export const getCompanyBook = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, nombre, apellido, correo, web, razon_social, ruc, direccion, logo_url FROM users WHERE id = 1"
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Libro oficial no encontrado" });
+    }
+
+    return res.json({ company: rows[0] });
+
+  } catch (error) {
+    console.error("[authController] getCompanyBook error:", error);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+};

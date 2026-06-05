@@ -26,9 +26,9 @@ const BENEFITS = [
   },
   {
     id: 3,
-    icon: "🔌",
-    title: "Plugin para WordPress",
-    desc: "Integra el libro de reclamaciones directamente en tu sitio WordPress con nuestro plugin premium.",
+    icon: "📈",
+    title: "Publicidad Gratuita a tu negocio",
+    desc: "Hacemos publicidad gratuita desde el primer plan, publicidad via google.",
   },
   {
     id: 4,
@@ -40,7 +40,7 @@ const BENEFITS = [
     id: 5,
     icon: "⚖️",
     title: "Cumple con la Normativa Legal",
-    desc: "Asegúrate de cumplir con las leyes peruanas de protección al consumidor de forma sencilla y confiable.",
+    desc: "Cumpliendo los requerimientos obligatorios que pide Sunat e Indecopi.",
   },
   {
     id: 6,

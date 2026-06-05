@@ -72,15 +72,15 @@ function Field({ label, required, children }) {
   );
 }
 
-function PublicClaimBook() {
+function PublicClaimBook({ companyOverride }) {
   // slug identifica la empresa dueña del libro en la URL
   const { slug } = useParams();
 
   // ── Datos de la empresa dueña del libro ─────────────────
-  // Fase 1: obtenidos desde localStorage del usuario logueado.
-  // Fase 2: se reemplaza por GET /api/empresa/:slug para obtener
-  // los datos reales de la empresa sin depender de localStorage.
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  // companyOverride: cuando se accede desde /libro-admin, este prop
+  // contiene los datos de Certia (users.id=1) cargados por AdminClaimBook.
+  // Si no se proporciona, se sigue usando localStorage (ruta /libro/:slug).
+  const user = companyOverride || JSON.parse(localStorage.getItem("user") || "{}");
 
   // ── Estado unificado del formulario de reclamo ───────────
   // Todos los campos del formulario viven aquí.
