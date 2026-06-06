@@ -18,44 +18,6 @@ import libroImg from "../assets/img/libro.png";
 // ── Registros por página en la tabla de pendientes ──
 const ITEMS_PER_PAGE = 10;
 
-// ── Datos mock temporales ──────────────────────────────────
-// Representan reportes del libro de reclamaciones.
-// En producción serán reemplazados por una llamada al backend.
-const mockReports = [
-  { id:  1, correlativo: "001", codigoSeguimiento: "LR-2026-001", cliente: "Carlos Mendoza",     tipo: "Reclamo",  monto: "S/ 120.00", fecha: "2026-05-01" },
-  { id:  2, correlativo: "002", codigoSeguimiento: "LR-2026-002", cliente: "Ana Torres",         tipo: "Queja",    monto: "S/ 0.00",   fecha: "2026-05-01" },
-  { id:  3, correlativo: "003", codigoSeguimiento: "LR-2026-003", cliente: "Jorge Ramírez",      tipo: "Reclamo",  monto: "S/ 350.00", fecha: "2026-05-02" },
-  { id:  4, correlativo: "004", codigoSeguimiento: "LR-2026-004", cliente: "María Luisa Vega",   tipo: "Reclamo",  monto: "S/ 80.00",  fecha: "2026-05-02" },
-  { id:  5, correlativo: "005", codigoSeguimiento: "LR-2026-005", cliente: "Pedro Huanca",       tipo: "Queja",    monto: "S/ 0.00",   fecha: "2026-05-03" },
-  { id:  6, correlativo: "006", codigoSeguimiento: "LR-2026-006", cliente: "Lucía Fernández",    tipo: "Reclamo",  monto: "S/ 200.00", fecha: "2026-05-03" },
-  { id:  7, correlativo: "007", codigoSeguimiento: "LR-2026-007", cliente: "Roberto Castro",     tipo: "Reclamo",  monto: "S/ 560.00", fecha: "2026-05-04" },
-  { id:  8, correlativo: "008", codigoSeguimiento: "LR-2026-008", cliente: "Sofía Paredes",      tipo: "Queja",    monto: "S/ 0.00",   fecha: "2026-05-04" },
-  { id:  9, correlativo: "009", codigoSeguimiento: "LR-2026-009", cliente: "Diego Alvarado",     tipo: "Reclamo",  monto: "S/ 145.00", fecha: "2026-05-05" },
-  { id: 10, correlativo: "010", codigoSeguimiento: "LR-2026-010", cliente: "Valeria Quispe",     tipo: "Reclamo",  monto: "S/ 95.00",  fecha: "2026-05-05" },
-  { id: 11, correlativo: "011", codigoSeguimiento: "LR-2026-011", cliente: "Manuel Soto",        tipo: "Queja",    monto: "S/ 0.00",   fecha: "2026-05-05" },
-  { id: 12, correlativo: "012", codigoSeguimiento: "LR-2026-012", cliente: "Elena Morales",      tipo: "Reclamo",  monto: "S/ 430.00", fecha: "2026-05-06" },
-  { id: 13, correlativo: "013", codigoSeguimiento: "LR-2026-013", cliente: "Andrés Villanueva",  tipo: "Reclamo",  monto: "S/ 75.00",  fecha: "2026-05-06" },
-  { id: 14, correlativo: "014", codigoSeguimiento: "LR-2026-014", cliente: "Carmen Iglesias",    tipo: "Queja",    monto: "S/ 0.00",   fecha: "2026-05-06" },
-  { id: 15, correlativo: "015", codigoSeguimiento: "LR-2026-015", cliente: "Francisco Reyes",    tipo: "Reclamo",  monto: "S/ 290.00", fecha: "2026-05-07" },
-  { id: 16, correlativo: "016", codigoSeguimiento: "LR-2026-016", cliente: "Isabel Chávez",      tipo: "Reclamo",  monto: "S/ 160.00", fecha: "2026-05-07" },
-  { id: 17, correlativo: "017", codigoSeguimiento: "LR-2026-017", cliente: "Gustavo Pinto",      tipo: "Queja",    monto: "S/ 0.00",   fecha: "2026-05-07" },
-  { id: 18, correlativo: "018", codigoSeguimiento: "LR-2026-018", cliente: "Patricia Lozano",    tipo: "Reclamo",  monto: "S/ 510.00", fecha: "2026-05-07" },
-  { id: 19, correlativo: "019", codigoSeguimiento: "LR-2026-019", cliente: "Héctor Salas",       tipo: "Reclamo",  monto: "S/ 230.00", fecha: "2026-05-07" },
-  { id: 20, correlativo: "020", codigoSeguimiento: "LR-2026-020", cliente: "Rosa Medina",        tipo: "Queja",    monto: "S/ 0.00",   fecha: "2026-05-07" },
-  { id: 21, correlativo: "021", codigoSeguimiento: "LR-2026-021", cliente: "Alberto Núñez",      tipo: "Reclamo",  monto: "S/ 185.00", fecha: "2026-05-07" },
-  { id: 22, correlativo: "022", codigoSeguimiento: "LR-2026-022", cliente: "Claudia Herrera",    tipo: "Reclamo",  monto: "S/ 320.00", fecha: "2026-05-07" },
-  { id: 23, correlativo: "023", codigoSeguimiento: "LR-2026-023", cliente: "Oscar Benavides",    tipo: "Queja",    monto: "S/ 0.00",   fecha: "2026-05-07" },
-];
-
-// ── Calcula la fecha de caducidad (hoy + 1 año) ──────────
-// Simula que el usuario adquirió el plan hoy.
-// Fase 2: obtener la fecha real desde la BD del usuario.
-const getExpirationDate = () => {
-  const date = new Date();
-  date.setFullYear(date.getFullYear() + 1);
-  return date.toISOString().split("T")[0]; // formato YYYY-MM-DD
-};
-
 // ─────────────────────────────────────────────────────────
 // ReportsTable — tabla de reportes con paginación.
 // Recibe datos reales desde el backend vía props.
@@ -282,6 +244,20 @@ function Dashboard() {
   // an active plan. Disappears after 3 seconds automatically.
   const [planMessage, setPlanMessage] = useState("");
 
+  // ── Estado de datos del plan — leídos frescos desde la BD ────────
+  // Inicializados desde localStorage como valor provisional mientras carga el fetch.
+  const [fechaFinPlan,    setFechaFinPlan]    = useState(user?.fecha_fin_plan    || null);
+  const [fechaInicioPlan, setFechaInicioPlan] = useState(user?.fecha_inicio_plan || null);
+  const [planDuracion,    setPlanDuracion]    = useState(user?.plan_duracion     || null);
+
+  // ── Planes disponibles — obtenidos desde la tabla `plans` de la BD ──
+  // Elimina precios hardcodeados del frontend.
+  // Futura integración con Izipay para gestión de pagos y renovaciones.
+  const [plans,            setPlans]            = useState([]);
+  const [plansLoading,     setPlansLoading]     = useState(false);
+  const [selectedPlan,     setSelectedPlan]     = useState(null); // guarda plan.id
+  const [showConfirmation, setShowConfirmation] = useState(false); // pantalla previa a Izipay
+
   // ── Carga de datos frescos desde la base de datos ────
   // Se ejecuta cuando el usuario está disponible.
   // Evita mostrar datos desactualizados de localStorage.
@@ -305,6 +281,10 @@ function Dashboard() {
           direccion:    fresh.direccion    || "",
           logo_url:     fresh.logo_url     || "",
         });
+        // Actualizar datos del plan con valores reales de la BD
+        setFechaFinPlan(fresh.fecha_fin_plan       || null);
+        setFechaInicioPlan(fresh.fecha_inicio_plan || null);
+        setPlanDuracion(fresh.plan_duracion        || null);
       })
       .catch((err) => console.error("[Dashboard] fetch user error:", err));
   }, [user?.id]);
@@ -410,6 +390,31 @@ function Dashboard() {
   useEffect(() => {
     if (activeTab === "Completado") {
       fetchCompletedClaims();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  // ── Carga de planes disponibles desde la BD ────────────────────
+  // GET /api/plans — público, sin JWT.
+  // Se ejecuta solo al abrir la pestaña "Mi Plan" para no hacer llamadas innecesarias.
+  const fetchPlans = async () => {
+    try {
+      setPlansLoading(true);
+      const res  = await fetch(`${API_URL}/plans`);
+      const data = await res.json();
+      if (!res.ok) return;
+      // Reemplaza cualquier precio hardcodeado: los datos vienen de la tabla `plans`
+      setPlans(data.plans || []);
+    } catch (error) {
+      console.error("Error cargando planes:", error);
+    } finally {
+      setPlansLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "Mi Plan") {
+      fetchPlans();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -798,7 +803,7 @@ function Dashboard() {
     }
   };
 
-  const tabs = ["Pendientes", "Completado", "Integración", "Ajuste"];
+  const tabs = ["Pendientes", "Completado", "Integración", "Mi Plan", "Ajuste"];
 
   return (
     <>
@@ -828,9 +833,11 @@ function Dashboard() {
             Libro de Reclamaciones: {companyName}
           </h1>
 
-          {/* Fecha de caducidad simulada */}
+          {/* Fecha de caducidad real desde la BD (campo fecha_fin_plan de users) */}
           <p style={{ fontSize: "15px", fontWeight: 600, color: "#374151", marginBottom: "22px" }}>
-            Fecha de Caducidad: {getExpirationDate()}
+            Fecha de Caducidad: {fechaFinPlan
+              ? new Date(fechaFinPlan).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" })
+              : "Sin plan activo"}
           </p>
         </div>
 
@@ -1065,6 +1072,334 @@ function Dashboard() {
               </div>
             </div>
           )}
+
+          {/* ══════════════════════════════════════════════════════
+               PESTAÑA: Mi Plan — Centro de gestión de membresía
+               Sección principal de suscripciones de Certia.
+               Lee datos reales desde la tabla users de la BD.
+               Futura integración con Izipay para compra y renovación.
+               ══════════════════════════════════════════════════════ */}
+          {activeTab === "Mi Plan" && (() => {
+            // ── Helpers de formato de fecha ──────────────────────
+            const formatDate = (raw) => {
+              if (!raw) return "No disponible";
+              return new Date(raw).toLocaleDateString("es-PE", {
+                day: "2-digit", month: "long", year: "numeric",
+              });
+            };
+
+            // ── Interpreta plan_duracion a texto legible ──────────
+            const planLabel = (() => {
+              if (!planDuracion) return null;
+              if (planDuracion === 10) return "Administrador";
+              if (planDuracion === 1)  return "1 Año";
+              if (planDuracion === 2)  return "2 Años";
+              if (planDuracion === 3)  return "3 Años";
+              return `${planDuracion} Años`;
+            })();
+
+            const hasplan = !!planDuracion;
+
+            return (
+              <div style={{ padding: "10px 0" }}>
+                {/* ── Tarjeta principal centrada — estilo premium ── */}
+                <div style={{
+                  maxWidth: "900px",
+                  margin: "0 auto",
+                  background: "#ffffff",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+                  padding: "40px 48px",
+                }}>
+
+                  {/* ── Título de sección ── */}
+                  <h2 style={{ fontSize: "28px", fontWeight: 700, color: "#111827", marginBottom: "6px" }}>
+                    Mi Plan
+                  </h2>
+                  <p style={{ fontSize: "15px", color: "#6b7280", marginBottom: "36px" }}>
+                    Administra tu suscripción y consulta el estado actual de tu membresía.
+                  </p>
+
+                  {/* ── Bloque de estado del plan ── */}
+                  <div style={{
+                    background: hasplan ? "#f0fdf4" : "#fef2f2",
+                    border: `1px solid ${hasplan ? "#bbf7d0" : "#fecaca"}`,
+                    borderRadius: "10px",
+                    padding: "20px 24px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: "32px",
+                    flexWrap: "wrap",
+                    gap: "12px",
+                  }}>
+                    <div>
+                      <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", fontWeight: 500 }}>
+                        ESTADO
+                      </p>
+                      <p style={{ fontSize: "20px", fontWeight: 700, color: hasplan ? "#15803d" : "#dc2626" }}>
+                        {hasplan ? "Plan Activo" : "Sin Plan Activo"}
+                      </p>
+                    </div>
+                    {/* Badge de estado */}
+                    <span style={{
+                      background: hasplan ? "#16a34a" : "#dc2626",
+                      color: "#fff",
+                      padding: "6px 18px",
+                      borderRadius: "999px",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      letterSpacing: "0.03em",
+                    }}>
+                      {hasplan ? "Activo" : "Sin Plan"}
+                    </span>
+                  </div>
+
+                  {/* ── Grid de detalles: Plan · Inicio · Vencimiento ── */}
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                    gap: "20px",
+                    marginBottom: "32px",
+                  }}>
+
+                    {/* Plan Actual */}
+                    <div style={{
+                      background: "#f9fafb",
+                      borderRadius: "8px",
+                      padding: "20px",
+                      border: "1px solid #e5e7eb",
+                    }}>
+                      <p style={{ fontSize: "12px", color: "#9ca3af", fontWeight: 600, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Plan Actual
+                      </p>
+                      <p style={{ fontSize: "20px", fontWeight: 700, color: "#111827" }}>
+                        {planLabel || "Sin plan"}
+                      </p>
+                    </div>
+
+                    {/* Fecha de Inicio */}
+                    <div style={{
+                      background: "#f9fafb",
+                      borderRadius: "8px",
+                      padding: "20px",
+                      border: "1px solid #e5e7eb",
+                    }}>
+                      <p style={{ fontSize: "12px", color: "#9ca3af", fontWeight: 600, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Fecha de Inicio
+                      </p>
+                      <p style={{ fontSize: "16px", fontWeight: 600, color: "#374151" }}>
+                        {formatDate(fechaInicioPlan)}
+                      </p>
+                    </div>
+
+                    {/* Fecha de Vencimiento */}
+                    <div style={{
+                      background: "#f9fafb",
+                      borderRadius: "8px",
+                      padding: "20px",
+                      border: "1px solid #e5e7eb",
+                    }}>
+                      <p style={{ fontSize: "12px", color: "#9ca3af", fontWeight: 600, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Fecha de Vencimiento
+                      </p>
+                      <p style={{ fontSize: "16px", fontWeight: 600, color: "#374151" }}>
+                        {formatDate(fechaFinPlan)}
+                      </p>
+                    </div>
+
+                  </div>
+
+                  {/* ── Planes disponibles desde la BD (sin precios hardcodeados) ── */}
+                  <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#111827", marginBottom: "16px" }}>
+                    Planes Disponibles
+                  </h3>
+
+                  {plansLoading ? (
+                    <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "28px" }}>Cargando planes...</p>
+                  ) : plans.length === 0 ? (
+                    <p style={{ color: "#9ca3af", fontSize: "14px", marginBottom: "28px" }}>No hay planes disponibles.</p>
+                  ) : (
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                      gap: "16px",
+                      marginBottom: "28px",
+                    }}>
+                      {/* Lectura real desde la tabla `plans` — sin valores hardcodeados */}
+                      {plans.map((plan) => {
+                        const isSelected = selectedPlan === plan.id;
+                        return (
+                          <div
+                            key={plan.id}
+                            onClick={() => setSelectedPlan(plan.id)}
+                            style={{
+                              background: isSelected ? "#eff6ff" : "#f9fafb",
+                              border: `2px solid ${isSelected ? "#1e3a8a" : "#e5e7eb"}`,
+                              borderRadius: "10px",
+                              padding: "20px",
+                              cursor: "pointer",
+                              transition: "all 0.15s",
+                            }}
+                          >
+                            <p style={{ fontSize: "14px", fontWeight: 700, color: "#111827", marginBottom: "8px" }}>
+                              {plan.nombre}
+                            </p>
+                            <p style={{ fontSize: "26px", fontWeight: 700, color: isSelected ? "#1e3a8a" : "#374151", marginBottom: "4px" }}>
+                              S/ {Number(plan.precio).toFixed(2)}
+                            </p>
+                            <p style={{ fontSize: "13px", color: "#6b7280" }}>
+                              {plan.duracion_anios === 1
+                                ? "1 Año"
+                                : `${plan.duracion_anios} Años`}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* ── Bloque informativo ── */}
+                  <p style={{
+                    fontSize: "14px",
+                    color: "#6b7280",
+                    lineHeight: 1.7,
+                    marginBottom: "28px",
+                    padding: "16px",
+                    background: "#f8fafc",
+                    borderRadius: "8px",
+                    border: "1px solid #e2e8f0",
+                  }}>
+                    Tu plan determina el acceso a funcionalidades avanzadas como Integración
+                    y futuras herramientas premium de Certia.
+                  </p>
+
+                  {/* ── Botón Comprar Plan ──
+                       Solo activo cuando hay un plan seleccionado.
+                       Al pulsar muestra la pantalla de confirmación;
+                       NO integra Izipay todavía. */}
+                  <button
+                    type="button"
+                    disabled={!selectedPlan}
+                    onClick={() => setShowConfirmation(true)}
+                    style={{
+                      background: selectedPlan ? "#1e3a8a" : "#9ca3af",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "8px",
+                      padding: "12px 28px",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      cursor: selectedPlan ? "pointer" : "not-allowed",
+                      transition: "background 0.2s",
+                    }}
+                  >
+                    Comprar Plan
+                  </button>
+
+                  {/* ── Pantalla de confirmación ──
+                       Paso previo obligatorio antes del procesamiento del pago.
+                       Se muestra solo cuando showConfirmation === true y hay un plan seleccionado.
+                       Aquí se registrará el pago como pendiente antes de redirigir a Izipay. */}
+                  {showConfirmation && selectedPlan && (() => {
+                    const plan = plans.find((p) => p.id === selectedPlan);
+                    if (!plan) return null;
+                    return (
+                      <div style={{
+                        maxWidth: "700px",
+                        margin: "28px auto 0",
+                        background: "#ffffff",
+                        borderRadius: "12px",
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.10)",
+                        padding: "36px 40px",
+                        border: "1px solid #e5e7eb",
+                      }}>
+
+                        {/* Título */}
+                        <h3 style={{ fontSize: "24px", fontWeight: 700, color: "#111827", marginBottom: "24px" }}>
+                          Confirmar Compra
+                        </h3>
+
+                        {/* Datos del plan seleccionado — obtenidos desde la BD, sin hardcodear */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "24px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #f3f4f6" }}>
+                            <span style={{ fontSize: "14px", color: "#6b7280", fontWeight: 500 }}>Plan Seleccionado</span>
+                            <span style={{ fontSize: "14px", color: "#111827", fontWeight: 700 }}>{plan.nombre}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #f3f4f6" }}>
+                            <span style={{ fontSize: "14px", color: "#6b7280", fontWeight: 500 }}>Duración</span>
+                            <span style={{ fontSize: "14px", color: "#111827", fontWeight: 700 }}>
+                              {plan.duracion_anios === 1 ? "1 Año" : `${plan.duracion_anios} Años`}
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0" }}>
+                            <span style={{ fontSize: "14px", color: "#6b7280", fontWeight: 500 }}>Monto</span>
+                            <span style={{ fontSize: "22px", color: "#1e3a8a", fontWeight: 700 }}>
+                              S/ {Number(plan.precio).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Mensaje de advertencia */}
+                        <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "28px" }}>
+                          Verifica los datos antes de proceder con el pago.
+                        </p>
+
+                        {/* Botones de acción */}
+                        <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+
+                          {/* Volver — cancela la confirmación */}
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmation(false)}
+                            style={{
+                              background: "#f3f4f6",
+                              color: "#374151",
+                              border: "1px solid #d1d5db",
+                              borderRadius: "8px",
+                              padding: "10px 24px",
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Volver
+                          </button>
+
+                          {/* Proceder al Pago — futura integración con Izipay.
+                               Aquí se iniciará la orden de pago y se registrará como pendiente. */}
+                          <button
+                            type="button"
+                            onClick={() => console.log("Proceder al pago", plan)}
+                            style={{
+                              background: "#1e3a8a",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "8px",
+                              padding: "10px 24px",
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Proceder al Pago
+                          </button>
+
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Próximamente:
+                    - Compra de planes con Izipay
+                    - Renovación automática y manual
+                    - Historial de pagos
+                  */}
+
+                </div>
+              </div>
+            );
+          })()}
 
           {/* PESTAÑA: Ajuste — Configuración de la cuenta */}
           {activeTab === "Ajuste" && (

@@ -1,3 +1,10 @@
+CREATE DATABASE IF NOT EXISTS proyecto_web;
+USE proyecto_web;
+
+-- ============================================================
+-- USERS
+-- ============================================================
+
 CREATE TABLE users (
   id INT AUTO_INCREMENT PRIMARY KEY,
 
@@ -26,12 +33,14 @@ CREATE TABLE users (
   fecha_fin_plan DATE NULL
 );
 
-
+-- ============================================================
+-- CLAIMS
+-- ============================================================
 
 CREATE TABLE claims (
   id INT AUTO_INCREMENT PRIMARY KEY,
 
-  -- Relación con empresa/usuario dueño del libro
+  -- Empresa propietaria del reclamo
   user_id INT NOT NULL,
 
   -- Identificadores automáticos
@@ -58,7 +67,7 @@ CREATE TABLE claims (
 
   es_menor_edad ENUM('Si', 'No') NOT NULL,
 
-  -- Datos del reclamo
+  -- Información del reclamo
   tipo_reclamo VARCHAR(50) NOT NULL,
   tipo_consumo VARCHAR(50) NOT NULL,
 
@@ -74,10 +83,10 @@ CREATE TABLE claims (
 
   archivo_adjunto VARCHAR(255),
 
-  -- Pedido final del cliente
+  -- Pedido del cliente
   pedido_cliente TEXT NOT NULL,
 
-  -- Respuesta futura de la empresa
+  -- Respuesta de la empresa
   respuesta TEXT NULL,
   fecha_respuesta DATETIME NULL,
 
@@ -85,16 +94,74 @@ CREATE TABLE claims (
   acepta_politica BOOLEAN NOT NULL DEFAULT 0,
 
   -- Estado del reclamo
-  estado ENUM('pendiente', 'completado')
-  NOT NULL DEFAULT 'pendiente',
+  estado ENUM(
+    'pendiente',
+    'completado'
+  ) NOT NULL DEFAULT 'pendiente',
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   ON UPDATE CURRENT_TIMESTAMP,
 
-  -- Relación con users
   CONSTRAINT fk_claims_user
+    FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON DELETE CASCADE
+);
+
+-- ============================================================
+-- PLANS
+-- ============================================================
+
+CREATE TABLE plans (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  nombre VARCHAR(100) NOT NULL,
+
+  duracion_anios INT NOT NULL,
+
+  precio DECIMAL(10,2) NOT NULL
+);
+
+INSERT INTO plans (
+  nombre,
+  duracion_anios,
+  precio
+)
+VALUES
+('Plan 1 Año', 1, 150.00),
+('Plan 2 Años', 2, 250.00),
+('Plan 3 Años', 3, 300.00);
+
+-- ============================================================
+-- PAYMENTS
+-- ============================================================
+
+CREATE TABLE payments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  user_id INT NOT NULL,
+
+  plan_duracion INT NOT NULL,
+
+  monto DECIMAL(10,2) NOT NULL,
+
+  estado ENUM(
+    'pendiente',
+    'aprobado',
+    'rechazado',
+    'cancelado'
+  ) NOT NULL DEFAULT 'pendiente',
+
+  transaction_id VARCHAR(255),
+
+  payment_provider VARCHAR(50)
+  NOT NULL DEFAULT 'izipay',
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_payments_user
     FOREIGN KEY (user_id)
     REFERENCES users(id)
     ON DELETE CASCADE

@@ -104,19 +104,14 @@ const PricingCard = ({ plan }) => (
       ))}
     </ul>
 
-    {/* ── Botón CTA — redirige a pasarela de pago externa (MercadoPago)
-         target="_blank" abre en nueva pestaña sin cerrar la landing.
-         rel="noopener noreferrer" evita que la nueva pestaña acceda
-         al objeto window de esta página (seguridad). ── */}
-    <a
-      href="https://link.mercadopago.com.pe/librodereclamaciones"
-      target="_blank"
-      rel="noopener noreferrer"
+    {/* ── Botón CTA — pasarela de pago pendiente de integrar ── */}
+    <button
+      type="button"
       className="pricing-card__btn"
       aria-label={`Empezar con el plan ${plan.name}`}
     >
       🚀 Empezar Ahora
-    </a>
+    </button>
 
     {/* ── Texto de soporte con emoji 🎧 — genera confianza ── */}
     <p className="pricing-card__support">{plan.support}</p>

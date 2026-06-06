@@ -10,6 +10,7 @@ import path              from "path";
 import { fileURLToPath } from "url";
 import authRoutes  from "./routes/authRoutes.js";
 import claimRoutes from "./routes/claimRoutes.js";
+import planRoutes  from "./routes/planRoutes.js";
 
 // __dirname no existe en módulos ESM; se reconstruye manualmente.
 // app.js está en backend/src, por eso "../uploads" apunta a backend/uploads.
@@ -46,6 +47,9 @@ app.use("/api", authRoutes);
 
 // Rutas públicas del libro de reclamaciones (sin JWT)
 app.use("/api", claimRoutes);
+
+// Rutas de planes — lectura pública desde la tabla `plans`
+app.use("/api", planRoutes);
 
 // ── Frontend React (produccion) ───────────────────────────
 // El build de Vite se copia en backend/public antes del deploy.
