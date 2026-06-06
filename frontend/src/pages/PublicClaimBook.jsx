@@ -79,8 +79,23 @@ function PublicClaimBook({ companyOverride }) {
   // ── Datos de la empresa dueña del libro ─────────────────
   // companyOverride: cuando se accede desde /libro-admin, este prop
   // contiene los datos de Certia (users.id=1) cargados por AdminClaimBook.
-  // Si no se proporciona, se sigue usando localStorage (ruta /libro/:slug).
-  const user = companyOverride || JSON.parse(localStorage.getItem("user") || "{}");
+  // Si no se proporciona, los datos se obtienen desde el backend (GET /api/company-book).
+  // NUNCA se usa localStorage ni se depende del usuario logueado.
+  const [company, setCompany] = useState(companyOverride || null);
+
+  // ── Carga de datos de la empresa desde la BD (vista pública) ──
+  // Usa el slug de la URL para identificar qué empresa es.
+  // Funciona sin sesión, sin JWT, sin localStorage.
+  // El endpoint /api/company-book/:slug busca el usuario por su razón social.
+  useEffect(() => {
+    if (companyOverride) return; // AdminClaimBook ya pasa los datos directamente
+    fetch(`${API_URL}/company-book/${slug}`)
+      .then((res) => res.json())
+      .then(({ company: data }) => {
+        if (data) setCompany(data);
+      })
+      .catch((err) => console.error("[PublicClaimBook] fetch company error:", err));
+  }, [companyOverride, slug]);
 
   // ── Estado unificado del formulario de reclamo ───────────
   // Todos los campos del formulario viven aquí.
@@ -323,8 +338,8 @@ function PublicClaimBook({ companyOverride }) {
     }
 
     try {
-      // Verificar que existe la empresa asociada (user_id desde localStorage)
-      if (!user?.id) {
+      // Verificar que existen los datos de la empresa (cargados desde /api/company-book)
+      if (!company?.id) {
         setClaimErrorMessage("No se encontró la empresa asociada al libro");
         return;
       }
@@ -337,7 +352,7 @@ function PublicClaimBook({ companyOverride }) {
       // con el boundary correcto — NO agregar el header manualmente.
       const formData = new FormData();
 
-      formData.append("user_id",          user.id);
+      formData.append("user_id",          company.id);
       formData.append("nombre",            claimForm.nombre);
       formData.append("primer_apellido",   claimForm.primer_apellido);
       formData.append("segundo_apellido",  claimForm.segundo_apellido);
@@ -470,16 +485,16 @@ function PublicClaimBook({ companyOverride }) {
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
             <div style={{ fontSize: "22px", fontWeight: 800, color: "#111827", textTransform: "uppercase" }}>
-              {user?.razon_social || "—"}
+              {company?.razon_social || "—"}
             </div>
             <div style={{ fontSize: "15px", fontWeight: 600, color: "#374151" }}>
-              RUC: {user?.ruc || "—"}
+              RUC: {company?.ruc || "—"}
             </div>
           </div>
           <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid #e5e7eb" }} />
           <div style={{ fontSize: "14px", color: "#6b7280" }}>
             <span style={{ fontWeight: 600, color: "#374151" }}>Dirección del Negocio: </span>
-            {user?.direccion || "—"}
+            {company?.direccion || "—"}
           </div>
         </div>
 

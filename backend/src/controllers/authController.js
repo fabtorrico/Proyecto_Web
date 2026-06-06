@@ -434,3 +434,49 @@ export const getCompanyBook = async (req, res) => {
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
+
+// ──────────────────────────────────────────────────────
+// getCompanyBookBySlug
+// Ruta PÚBLICA — no requiere JWT.
+// Recibe el slug generado a partir de la razón social del usuario.
+// Carga TODOS los usuarios y busca el que cuyo slug coincida.
+// Esto permite que cada usuario tenga su propio libro público en /libro/:slug.
+// La lógica de slug es idéntica a la del frontend (normalize + replace).
+// Recibe: GET /api/company-book/:slug
+// ──────────────────────────────────────────────────────
+export const getCompanyBookBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    if (!slug || typeof slug !== "string" || slug.trim() === "") {
+      return res.status(400).json({ error: "Slug inválido" });
+    }
+
+    // Mógica de slug idéntica a la del Dashboard.jsx:
+    // razon_social → lowercase → quitar tildes → quitar chars especiales → guiones
+    const toSlug = (str) =>
+      (str || "empresa")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s-]/g, "")
+        .trim()
+        .replace(/\s+/g, "-");
+
+    const [users] = await pool.query(
+      "SELECT id, nombre, apellido, correo, web, razon_social, ruc, direccion, logo_url FROM users"
+    );
+
+    const match = users.find((u) => toSlug(u.razon_social) === slug.trim());
+
+    if (!match) {
+      return res.status(404).json({ error: "Empresa no encontrada" });
+    }
+
+    return res.json({ company: match });
+
+  } catch (error) {
+    console.error("[authController] getCompanyBookBySlug error:", error);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+};

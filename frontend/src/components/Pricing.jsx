@@ -104,15 +104,6 @@ const PricingCard = ({ plan }) => (
       ))}
     </ul>
 
-    {/* ── Botón CTA — pasarela de pago pendiente de integrar ── */}
-    <button
-      type="button"
-      className="pricing-card__btn"
-      aria-label={`Empezar con el plan ${plan.name}`}
-    >
-      🚀 Empezar Ahora
-    </button>
-
     {/* ── Texto de soporte con emoji 🎧 — genera confianza ── */}
     <p className="pricing-card__support">{plan.support}</p>
 

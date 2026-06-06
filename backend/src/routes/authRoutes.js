@@ -4,7 +4,7 @@
 // ============================================================
 
 import express from "express";
-import { login, register, getUser, updateUserProfile, updateBusinessData, updateUserPassword, getCompanyBook } from "../controllers/authController.js";
+import { login, register, getUser, updateUserProfile, updateBusinessData, updateUserPassword, getCompanyBook, getCompanyBookBySlug } from "../controllers/authController.js";
 // Middleware que verifica el JWT en el header Authorization de cada petición privada
 import { verifyToken } from "../middlewares/authMiddleware.js";
 
@@ -29,10 +29,14 @@ router.put("/users/:id/business", verifyToken, updateBusinessData);
 // PUT /api/users/:id/password — verifica antigua contraseña y actualiza por la nueva
 router.put("/users/:id/password", verifyToken, updateUserPassword);
 
-// GET /api/company-book — ruta PUBLICA, no requiere JWT.
+// GET /api/company-book — ruta PÚBLICA, no requiere JWT.
 // Devuelve los datos de la empresa corporativa de Certia (users.id = 1).
-// Usada por el enlace "Libro de Reclamaciones" del footer para mostrar
-// siempre el libro oficial, independientemente del usuario logueado.
+// Usada por AdminClaimBook (/libro-admin) para mostrar siempre el libro oficial.
 router.get("/company-book", getCompanyBook);
+
+// GET /api/company-book/:slug — ruta PÚBLICA, no requiere JWT.
+// Busca el usuario cuyo slug de razón social coincida con el parámetro.
+// Permite que cada usuario tenga su propio libro público en /libro/:slug.
+router.get("/company-book/:slug", getCompanyBookBySlug);
 
 export default router;
