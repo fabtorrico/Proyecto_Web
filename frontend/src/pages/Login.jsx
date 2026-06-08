@@ -77,13 +77,7 @@ function Login() {
         src="/logo.png"
         alt="Logo CERTIA"
         className="login-logo"
-        onError={(e) => { e.target.style.display = "none"; }}
       />
-
-      {/* Nombre de la marca debajo del logo */}
-      <p className="login-brand">
-        <span>Certia</span>
-      </p>
 
       {/* ── Caja del formulario ── */}
       <div className="login-box">
