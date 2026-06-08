@@ -8,9 +8,11 @@ import cors              from "cors";
 import dotenv            from "dotenv";
 import path              from "path";
 import { fileURLToPath } from "url";
-import authRoutes  from "./routes/authRoutes.js";
-import claimRoutes from "./routes/claimRoutes.js";
-import planRoutes  from "./routes/planRoutes.js";
+import authRoutes    from "./routes/authRoutes.js";
+import claimRoutes   from "./routes/claimRoutes.js";
+import planRoutes    from "./routes/planRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import izipayRoutes  from "./routes/izipayRoutes.js";
 
 // __dirname no existe en módulos ESM; se reconstruye manualmente.
 // app.js está en backend/src, por eso "../uploads" apunta a backend/uploads.
@@ -50,6 +52,13 @@ app.use("/api", claimRoutes);
 
 // Rutas de planes — lectura pública desde la tabla `plans`
 app.use("/api", planRoutes);
+
+// Rutas de pagos — requieren JWT (estado: pendiente → base para Izipay)
+app.use("/api/payments", paymentRoutes);
+
+// Rutas de Izipay — integración LinkPro PaymentForm
+// POST /api/payments/create-order → obtiene paymentURL del proveedor
+app.use("/api/payments", izipayRoutes);
 
 // ── Frontend React (produccion) ───────────────────────────
 // El build de Vite se copia en backend/public antes del deploy.

@@ -257,6 +257,9 @@ function Dashboard() {
   const [plansLoading,     setPlansLoading]     = useState(false);
   const [selectedPlan,     setSelectedPlan]     = useState(null); // guarda plan.id
   const [showConfirmation, setShowConfirmation] = useState(false); // pantalla previa a Izipay
+  const [paymentLoading,   setPaymentLoading]   = useState(false); // bloquea doble clic
+  const [paymentMessage,   setPaymentMessage]   = useState("");    // mensaje de éxito
+  const [paymentError,     setPaymentError]     = useState("");    // mensaje de error
 
   // ── Carga de datos frescos desde la base de datos ────
   // Se ejecuta cuando el usuario está disponible.
@@ -1366,26 +1369,88 @@ function Dashboard() {
                             Volver
                           </button>
 
-                          {/* Proceder al Pago — futura integración con Izipay.
-                               Aquí se iniciará la orden de pago y se registrará como pendiente. */}
+                          {/* Proceder al Pago — primer paso real del flujo de pagos.
+                               Registra un pago pendiente en la tabla `payments`.
+                               Base para el webhook/IPN de Izipay (integración futura). */}
                           <button
                             type="button"
-                            onClick={() => console.log("Proceder al pago", plan)}
+                            disabled={paymentLoading}
+                            onClick={async () => {
+                              setPaymentMessage("");
+                              setPaymentError("");
+                              setPaymentLoading(true);
+                              try {
+                                // ── Paso 1: registrar/reutilizar pago pendiente ──
+                                const createRes = await fetch(`${API_URL}/payments/create`, {
+                                  method:  "POST",
+                                  headers: {
+                                    "Content-Type":  "application/json",
+                                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                                  },
+                                  body: JSON.stringify({ planId: plan.id }),
+                                });
+                                const createData = await createRes.json();
+                                if (!createRes.ok) {
+                                  setPaymentError(createData.error || "No se pudo registrar el pago");
+                                  return;
+                                }
+
+                                const paymentId = createData.paymentId;
+
+                                // ── Paso 2: crear orden en Izipay con el paymentId ──
+                                const res = await fetch(`${API_URL}/payments/create-order`, {
+                                  method:  "POST",
+                                  headers: {
+                                    "Content-Type":  "application/json",
+                                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                                  },
+                                  body: JSON.stringify({ paymentId }),
+                                });
+                                const data = await res.json();
+                                if (!res.ok) {
+                                  setPaymentError(data.error || "No se pudo conectar con el proveedor de pago");
+                                  return;
+                                }
+                                // Paso 2 exitoso: redirigir al formulario de pago de Izipay.
+                                if (data.success && data.paymentURL) {
+                                  window.location.href = data.paymentURL;
+                                } else {
+                                  setPaymentError("No fue posible iniciar el proceso de pago.");
+                                }
+                              } catch (err) {
+                                console.error("[Dashboard] createPayment error:", err);
+                                setPaymentError("Error de conexión. Verifica que el servidor esté activo.");
+                              } finally {
+                                setPaymentLoading(false);
+                              }
+                            }}
                             style={{
-                              background: "#1e3a8a",
+                              background: paymentLoading ? "#6b7280" : "#1e3a8a",
                               color: "#fff",
                               border: "none",
                               borderRadius: "8px",
                               padding: "10px 24px",
                               fontSize: "14px",
                               fontWeight: 600,
-                              cursor: "pointer",
+                              cursor: paymentLoading ? "not-allowed" : "pointer",
                             }}
                           >
-                            Proceder al Pago
+                            {paymentLoading ? "Procesando..." : "Proceder al Pago"}
                           </button>
 
                         </div>
+                        {/* Mensajes de resultado del pago */}
+                        {paymentMessage && (
+                          <p style={{ marginTop: "16px", fontSize: "14px", color: "#16a34a", fontWeight: 600, textAlign: "center" }}>
+                            ✅ {paymentMessage}
+                          </p>
+                        )}
+                        {paymentError && (
+                          <p style={{ marginTop: "16px", fontSize: "14px", color: "#dc2626", fontWeight: 600, textAlign: "center" }}>
+                            ❌ {paymentError}
+                          </p>
+                        )}
+
                       </div>
                     );
                   })()}
