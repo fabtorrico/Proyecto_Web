@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../assets/css/home.css";
+import logoImg from "../assets/img/logo.png";
 // API_URL centralizada: usa VITE_API_URL de .env (dev) o .env.production (prod)
 import { API_URL } from "../config/api";
 
@@ -72,9 +73,9 @@ function Login() {
     /* Contenedor principal: ocupa toda la pantalla, centra el formulario */
     <div className="login-container">
 
-      {/* Logo de la marca — imagen en /public/logo.png */}
+      {/* Logo de la marca */}
       <img
-        src="/logo.png"
+        src={logoImg}
         alt="Logo CERTIA"
         className="login-logo"
       />
