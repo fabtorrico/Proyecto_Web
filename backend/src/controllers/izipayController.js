@@ -148,6 +148,16 @@ export const createPaymentOrder = async (req, res) => {
 // ──────────────────────────────────────────────────────
 export const handleIPN = async (req, res) => {
   try {
+    // ── Logs de diagnóstico — eliminar en producción ─────────
+    console.log("[izipay IPN] Headers:", req.headers);
+    console.log("[izipay IPN] Body:",    req.body);
+
+    // ── Validar que req.body existe y no está vacío ────────
+    if (!req.body || Object.keys(req.body).length === 0) {
+      console.error("[izipay IPN] Body vacío o no parseado");
+      return res.status(400).json({ error: "Body vacío" });
+    }
+
     const krAnswer          = req.body["kr-answer"];
     const krHash            = req.body["kr-hash"];
     const krHashAlgorithm   = req.body["kr-hash-algorithm"];

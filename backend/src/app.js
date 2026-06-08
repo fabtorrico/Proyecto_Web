@@ -37,6 +37,10 @@ app.use(cors({
 // Parsea el body de los requests como JSON
 app.use(express.json());
 
+// Parsea el body enviado como application/x-www-form-urlencoded.
+// Izipay envía el IPN en este formato, no como JSON.
+app.use(express.urlencoded({ extended: true }));
+
 // ── Archivos estáticos ────────────────────────────────────
 // Sirve los archivos de uploads/claims en /uploads/claims/{nombre}
 // Necesario para que el botón "VER ARCHIVO ADJUNTO" del Dashboard pueda abrirlos.
