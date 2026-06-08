@@ -82,7 +82,7 @@ function Login() {
 
       {/* Nombre de la marca debajo del logo */}
       <p className="login-brand">
-        <span>LR</span>Peru
+        <span>Certia</span>
       </p>
 
       {/* ── Caja del formulario ── */}
