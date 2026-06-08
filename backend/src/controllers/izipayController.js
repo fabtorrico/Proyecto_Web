@@ -148,7 +148,7 @@ export const createPaymentOrder = async (req, res) => {
 // ──────────────────────────────────────────────────────
 export const handleIPN = async (req, res) => {
   try {
-    // ── Logs de diagnóstico — eliminar en producción ─────────
+    // ── Logs de diagnóstico ────────────────────────────────
     console.log("[izipay IPN] Headers:", req.headers);
     console.log("[izipay IPN] Body:",    req.body);
 
@@ -158,68 +158,33 @@ export const handleIPN = async (req, res) => {
       return res.status(400).json({ error: "Body vacío" });
     }
 
-    const krAnswer          = req.body["kr-answer"];
-    const krHash            = req.body["kr-hash"];
-    const krHashAlgorithm   = req.body["kr-hash-algorithm"];
-    const { IZIPAY_HMAC_KEY } = process.env;
+    // ── Leer campos del payload real de Izipay (formato vads_*) ──
+    const vadsOrderId     = req.body["vads_order_id"];
+    const vadsTransStatus = req.body["vads_trans_status"];
+    const vadsTransUuid   = req.body["vads_trans_uuid"];
+    const signature       = req.body["signature"];
 
-    console.log("[izipay IPN] recibido:", { krHashAlgorithm, krHash });
+    console.log("[izipay IPN] vads_order_id:",     vadsOrderId);
+    console.log("[izipay IPN] vads_trans_status:", vadsTransStatus);
+    console.log("[izipay IPN] vads_trans_uuid:",   vadsTransUuid);
+    console.log("[izipay IPN] signature:",         signature);
 
-    // ── Validar que los campos obligatorios existen ──────────
-    if (!krAnswer || !krHash) {
-      console.error("[izipay IPN] campos faltantes en el payload");
-      return res.status(400).json({ error: "Payload IPN incompleto" });
+    // ── Solo procesar pagos autorizados ───────────────────
+    // Para otros estados (REFUSED, CANCELLED, etc.) confirmar recepción sin actuar.
+    if (vadsTransStatus !== "AUTHORISED") {
+      console.log("[izipay IPN] estado no aprobado:", vadsTransStatus);
+      return res.status(200).send("IGNORED");
     }
 
-    if (!IZIPAY_HMAC_KEY) {
-      console.error("[izipay IPN] IZIPAY_HMAC_KEY no configurada");
-      return res.status(500).json({ error: "Clave HMAC no configurada" });
-    }
-
-    // ── Validar firma HMAC-SHA256 ───────────────────────
-    // Izipay firma kr-answer con HMAC-SHA256 usando la clave HMAC del comercio.
-    // Si la firma no coincide, el evento no es auténtico y se rechaza.
-    const expectedHash = crypto
-      .createHmac("sha256", IZIPAY_HMAC_KEY)
-      .update(krAnswer)
-      .digest("hex");
-
-    if (expectedHash !== krHash) {
-      console.error("[izipay IPN] firma HMAC inválida");
-      return res.status(400).json({ error: "Firma HMAC inválida" });
-    }
-
-    // ── Parsear el cuerpo del evento ──────────────────────
-    let answer;
-    try {
-      answer = JSON.parse(krAnswer);
-    } catch {
-      console.error("[izipay IPN] kr-answer no es JSON válido");
-      return res.status(400).json({ error: "kr-answer inválido" });
-    }
-
-    const orderStatus = answer.orderStatus;
-    const orderId     = answer.orderDetails?.orderId || answer.orderId;
-    const uuid        = answer.transactions?.[0]?.uuid;
-
-    console.log("[izipay IPN] orderStatus:", orderStatus, "| orderId:", orderId, "| uuid:", uuid);
-
-    // ── Solo procesar pagos aprobados ───────────────────
-    // Para otros estados (UNPAID, CANCELLED, etc.) solo confirmar recepción.
-    if (orderStatus !== "PAID") {
-      console.log("[izipay IPN] pago no aprobado, estado:", orderStatus);
-      return res.status(200).json({ received: true, orderStatus });
-    }
-
-    // ── Extraer paymentId desde orderId (formato: CERTIA-{id}) ──
-    const paymentId = parseInt((orderId || "").replace("CERTIA-", ""));
+    // ── Extraer paymentId desde vads_order_id (formato: CERTIA-{id}) ──
+    const paymentId = parseInt((vadsOrderId || "").replace("CERTIA-", ""));
 
     if (!paymentId || isNaN(paymentId)) {
-      console.error("[izipay IPN] orderId no válido:", orderId);
-      return res.status(200).json({ received: true, error: "orderId no reconocido" });
+      console.error("[izipay IPN] vads_order_id no válido:", vadsOrderId);
+      return res.status(200).send("IGNORED");
     }
 
-    // ── Buscar el pago en la BD ───────────────────────
+    // ── Buscar el pago en la BD ───────────────────────────
     const [payments] = await pool.query(
       "SELECT * FROM payments WHERE id = ? LIMIT 1",
       [paymentId]
@@ -227,42 +192,41 @@ export const handleIPN = async (req, res) => {
 
     if (payments.length === 0) {
       console.error("[izipay IPN] pago no encontrado en BD, paymentId:", paymentId);
-      return res.status(200).json({ received: true, error: "pago no encontrado" });
+      return res.status(200).send("IGNORED");
     }
 
     const payment = payments[0];
     console.log("[izipay IPN] pago encontrado: userId=", payment.user_id, "| plan_duracion=", payment.plan_duracion);
 
-    // ── Actualizar payments.estado = 'aprobado' ──────────
+    // ── Actualizar payments: estado = 'aprobado' ──────────
     await pool.query(
       "UPDATE payments SET estado = 'aprobado', transaction_id = ? WHERE id = ?",
-      [uuid || null, paymentId]
+      [vadsTransUuid || null, paymentId]
     );
 
-    // ── Calcular fecha_fin_plan según plan_duracion ───────
+    // ── Calcular fecha_fin_plan según plan_duracion ────────
     // INTERVAL n YEAR calcula correctamente años bisiestos.
     const duracion = parseInt(payment.plan_duracion);
     const fechaFinExpr = `DATE_ADD(CURDATE(), INTERVAL ${duracion} YEAR)`;
 
-    // ── Activar plan en la tabla users ─────────────────
+    // ── Activar plan en la tabla users ────────────────────
     await pool.query(
       `UPDATE users
-       SET plan_duracion      = ?,
-           fecha_inicio_plan  = CURDATE(),
-           fecha_fin_plan     = ${fechaFinExpr}
+       SET plan_duracion     = ?,
+           fecha_inicio_plan = CURDATE(),
+           fecha_fin_plan    = ${fechaFinExpr}
        WHERE id = ?`,
       [duracion, payment.user_id]
     );
 
     console.log("[izipay IPN] plan activado: userId=", payment.user_id, "| duracion=", duracion, "años");
 
-    // Responder HTTP 200 para que Izipay sepa que el IPN fue procesado.
-    return res.status(200).json({ received: true, activated: true });
+    // Responder HTTP 200 para confirmar recepción a Izipay.
+    return res.status(200).send("OK");
 
   } catch (error) {
     console.error("[izipayController] handleIPN error:", error.message);
-    // Siempre responder 200 a Izipay aunque haya error interno,
-    // para evitar reintentos infinitos del proveedor.
-    return res.status(200).json({ received: true, error: "error interno" });
+    // Siempre responder 200 para evitar reintentos infinitos del proveedor.
+    return res.status(200).send("ERROR");
   }
 };
