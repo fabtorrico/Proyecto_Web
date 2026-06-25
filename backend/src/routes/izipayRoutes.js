@@ -4,18 +4,21 @@
 // POST /api/payments/ipn           — webhook de Izipay (público, sin JWT)
 // ============================================================
 
-import express                          from "express";
-import { createPaymentOrder, handleIPN } from "../controllers/izipayController.js";
-import { verifyToken }                  from "../middlewares/authMiddleware.js";
+import express                                          from "express";
+import { createPaymentOrder, handleIPN, verifyPayment } from "../controllers/izipayController.js";
+import { verifyToken }                                  from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 // POST /create-order — inicia el flujo con Izipay y devuelve paymentURL.
 router.post("/create-order", verifyToken, createPaymentOrder);
 
+// POST /verify — consulta Izipay y activa el plan si el pago fue aprobado.
+// Fallback para cuando el IPN no llega (entorno local, prod desactualizado, etc.).
+router.post("/verify", verifyToken, verifyPayment);
+
 // POST /ipn — webhook público llamado por Izipay al completar el pago.
 // NO lleva verifyToken: Izipay no tiene token JWT del usuario.
-// La autenticidad se valida internamente con HMAC-SHA256.
 router.post("/ipn", handleIPN);
 
 export default router;

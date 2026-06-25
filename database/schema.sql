@@ -130,6 +130,7 @@ INSERT INTO plans (
   precio
 )
 VALUES
+('Plan Mensual', 0, 25.00),
 ('Plan 1 Año', 1, 150.00),
 ('Plan 2 Años', 2, 250.00),
 ('Plan 3 Años', 3, 300.00);

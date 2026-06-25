@@ -13,7 +13,23 @@ import "../assets/css/home.css"; // Estilos globales del proyecto
 // support: incluye emoji 🎧 para refuerzo visual de confianza.
 // ──────────────────────────────────────────────────────────
 const PLANS = [
-  // ── Fila 1: Planes del Libro de Reclamaciones ──
+  // ── Plan Mensual ──
+  {
+    id: 0,
+    icon: "📅",
+    name: "Plan Mensual",
+    price: "25",
+    period: "/mes",
+    featured: false,
+    support: "🎧 Soporte Básico Mensual",
+    features: [
+      "Enlace y QR Personalizado",
+      "Formulario de Reclamaciones",
+      "PDFs Automáticos",
+      "1 Usuario, 1 RUC",
+    ],
+  },
+  // ── Planes anuales ──
   {
     id: 1,
     icon: "📅",

@@ -285,21 +285,21 @@ function Dashboard() {
           logo_url:     fresh.logo_url     || "",
         });
         // Actualizar datos del plan con valores reales de la BD
-        setFechaFinPlan(fresh.fecha_fin_plan       || null);
-        setFechaInicioPlan(fresh.fecha_inicio_plan || null);
-        setPlanDuracion(fresh.plan_duracion        || null);
+        // IMPORTANTE: usar ?? (nullish) en lugar de || para que plan_duracion=0
+        // (Plan Mensual) no se convierta en null por ser falsy.
+        setFechaFinPlan(fresh.fecha_fin_plan       ?? null);
+        setFechaInicioPlan(fresh.fecha_inicio_plan ?? null);
+        setPlanDuracion(fresh.plan_duracion        ?? null);
       })
       .catch((err) => console.error("[Dashboard] fetch user error:", err));
   }, [user?.id]);
 
-  // hasActivePlan: returns true when the user has a plan whose end date has not
-  // yet passed. Both plan_duracion and fecha_fin_plan must be non-null (they are
-  // NULL for users registered without a paid plan).
-  // TODO: integrate with MercadoPago payment flow so this flag is set on purchase.
+  // hasActivePlan: true cuando el usuario tiene plan cuya fecha_fin no ha vencido.
+  // plan_duracion = 0 es el plan mensual y es válido — no tratar 0 como false.
   const hasActivePlan = () => {
-    if (!user?.plan_duracion || !user?.fecha_fin_plan) return false;
+    if (planDuracion === null || planDuracion === undefined || !fechaFinPlan) return false;
     const today   = new Date();
-    const endDate = new Date(user.fecha_fin_plan);
+    const endDate = new Date(fechaFinPlan);
     today.setHours(0, 0, 0, 0);
     endDate.setHours(0, 0, 0, 0);
     return endDate >= today;
@@ -1093,15 +1093,17 @@ function Dashboard() {
 
             // ── Interpreta plan_duracion a texto legible ──────────
             const planLabel = (() => {
-              if (!planDuracion) return null;
-              if (planDuracion === 10) return "Administrador";
+              if (planDuracion === null || planDuracion === undefined) return null;
+              if (planDuracion === 0)  return "Plan Mensual";
               if (planDuracion === 1)  return "1 Año";
               if (planDuracion === 2)  return "2 Años";
               if (planDuracion === 3)  return "3 Años";
+              if (planDuracion === 10) return "Administrador";
               return `${planDuracion} Años`;
             })();
 
-            const hasplan = !!planDuracion;
+            // plan_duracion = 0 (mensual) también es plan activo
+            const hasplan = planDuracion !== null && planDuracion !== undefined;
 
             return (
               <div style={{ padding: "10px 0" }}>
@@ -1252,7 +1254,9 @@ function Dashboard() {
                               S/ {Number(plan.precio).toFixed(2)}
                             </p>
                             <p style={{ fontSize: "13px", color: "#6b7280" }}>
-                              {plan.duracion_anios === 1
+                              {plan.duracion_anios === 0
+                                ? "1 mes"
+                                : plan.duracion_anios === 1
                                 ? "1 Año"
                                 : `${plan.duracion_anios} Años`}
                             </p>
@@ -1332,7 +1336,11 @@ function Dashboard() {
                           <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #f3f4f6" }}>
                             <span style={{ fontSize: "14px", color: "#6b7280", fontWeight: 500 }}>Duración</span>
                             <span style={{ fontSize: "14px", color: "#111827", fontWeight: 700 }}>
-                              {plan.duracion_anios === 1 ? "1 Año" : `${plan.duracion_anios} Años`}
+                              {plan.duracion_anios === 0
+                                ? "1 mes"
+                                : plan.duracion_anios === 1
+                                ? "1 Año"
+                                : `${plan.duracion_anios} Años`}
                             </span>
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0" }}>

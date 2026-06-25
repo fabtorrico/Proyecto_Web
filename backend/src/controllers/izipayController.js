@@ -131,102 +131,267 @@ export const createPaymentOrder = async (req, res) => {
 };
 
 // ──────────────────────────────────────────────────────
+// verifyPayment
+// Ruta PRIVADA — requiere JWT.
+// Consulta el estado real de la orden en Izipay y, si está pagada,
+// activa el plan del usuario en la BD.
+// Fallback para cuando el IPN no llega (URL de producción, ngrok, etc.).
+//
+// Recibe: POST /api/payments/verify
+// Body:   { paymentId }  (el id del registro en la tabla payments)
+// ──────────────────────────────────────────────────────
+export const verifyPayment = async (req, res) => {
+  try {
+    const userId    = req.user.id;
+    const paymentId = parseInt(req.body?.paymentId, 10);
+
+    if (!paymentId || isNaN(paymentId)) {
+      return res.status(400).json({ error: "paymentId inválido" });
+    }
+
+    // ── Verificar que el pago existe y pertenece al usuario ──
+    const [rows] = await pool.query(
+      "SELECT * FROM payments WHERE id = ? AND user_id = ? LIMIT 1",
+      [paymentId, userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Pago no encontrado" });
+    }
+
+    const payment = rows[0];
+
+    // Si ya está aprobado, responder sin volver a llamar a Izipay
+    if (payment.estado === "aprobado") {
+      return res.json({ success: true, alreadyApproved: true, message: "El plan ya está activo." });
+    }
+
+    // ── Consultar Izipay: estado real de la orden ──────────
+    const { IZIPAY_USERNAME, IZIPAY_PASSWORD } = process.env;
+    const orderGetUrl = "https://api.micuentaweb.pe/api-payment/V4/Order/Get";
+    const orderId     = `CERTIA-${payment.id}`;
+
+    console.log("[verify] consultando Izipay para orderId:", orderId);
+
+    const izipayRes = await axios.post(
+      orderGetUrl,
+      { orderId },
+      {
+        auth:    { username: IZIPAY_USERNAME, password: IZIPAY_PASSWORD },
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    console.log("[verify] Izipay Order/Get status:", izipayRes.data?.status,
+      "| orderStatus:", izipayRes.data?.answer?.orderStatus);
+
+    if (izipayRes.data?.status !== "SUCCESS") {
+      return res.status(400).json({ success: false, error: "Error al consultar Izipay", detail: izipayRes.data });
+    }
+
+    const orderStatus  = izipayRes.data.answer?.orderStatus;
+    const transactions = izipayRes.data.answer?.transactions || [];
+
+    // orderStatus "PAID" o alguna transacción en estado aprobado
+    const TRANS_OK = ["AUTHORISED", "AUTHORISED_TO_VALIDATE", "CAPTURED"];
+    const isPaid   = orderStatus === "PAID"
+      || transactions.some(t => TRANS_OK.includes(String(t.transStatus || t.status || "").toUpperCase()));
+
+    if (!isPaid) {
+      return res.json({
+        success: false,
+        pending: true,
+        orderStatus,
+        message: "El pago aún no ha sido confirmado por Izipay.",
+      });
+    }
+
+    // ── Pago confirmado → activar plan ────────────────────
+    const transUuid = transactions[0]?.uuid || transactions[0]?.transactionUuid || null;
+
+    const [updatePay] = await pool.query(
+      "UPDATE payments SET estado = 'aprobado', transaction_id = ? WHERE id = ?",
+      [transUuid, paymentId]
+    );
+    console.log("[verify] UPDATE payments — filas afectadas:", updatePay.affectedRows);
+
+    const planDuracion = payment.plan_duracion;
+    if (planDuracion === null || planDuracion === undefined) {
+      return res.status(500).json({ error: "plan_duracion inválido en el registro de pago" });
+    }
+
+    const duracion = parseInt(planDuracion, 10);
+    let fechaFinExpr;
+    if (duracion === 0)      fechaFinExpr = "DATE_ADD(CURDATE(), INTERVAL 1 MONTH)";
+    else if (duracion === 1) fechaFinExpr = "DATE_ADD(CURDATE(), INTERVAL 1 YEAR)";
+    else if (duracion === 2) fechaFinExpr = "DATE_ADD(CURDATE(), INTERVAL 2 YEAR)";
+    else if (duracion === 3) fechaFinExpr = "DATE_ADD(CURDATE(), INTERVAL 3 YEAR)";
+    else                     fechaFinExpr = `DATE_ADD(CURDATE(), INTERVAL ${duracion} YEAR)`;
+
+    const [updateUser] = await pool.query(
+      `UPDATE users
+         SET plan_duracion     = ?,
+             fecha_inicio_plan = CURDATE(),
+             fecha_fin_plan    = ${fechaFinExpr}
+       WHERE id = ?`,
+      [duracion, payment.user_id]
+    );
+    console.log("[verify] UPDATE users — filas afectadas:", updateUser.affectedRows);
+    console.log("[verify] ✓ plan activado — userId:", payment.user_id, "| plan_duracion:", duracion);
+
+    return res.json({ success: true, activated: true, message: "Plan activado correctamente." });
+
+  } catch (error) {
+    if (error.response) {
+      console.error("[verify] error Izipay:", error.response.status, JSON.stringify(error.response.data));
+      return res.status(400).json({ success: false, error: error.response.data });
+    }
+    console.error("[verify] error inesperado:", error.message);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
+
+// ──────────────────────────────────────────────────────
 // handleIPN
 // Ruta PÚBLICA — Izipay llama a este endpoint directamente.
 // NO lleva JWT: el servidor de Izipay no tiene token del usuario.
-// La autenticidad se valida con HMAC-SHA256 usando IZIPAY_HMAC_KEY.
 //
 // Flujo:
-//   1. Validar firma HMAC del payload
-//   2. Parsear kr-answer
-//   3. Verificar orderStatus === 'PAID'
-//   4. Actualizar payments.estado = 'aprobado'
-//   5. Calcular fecha_fin_plan según plan_duracion
-//   6. Activar plan en la tabla users
+//   1. Leer campos vads_* del body (urlencoded)
+//   2. Verificar vads_trans_status === "AUTHORISED"
+//   3. Extraer paymentId desde vads_order_id  (formato: CERTIA-{id})
+//   4. Buscar payment en BD
+//   5. UPDATE payments SET estado = 'aprobado'
+//   6. Calcular fecha_fin_plan según plan_duracion
+//      plan_duracion = 0 → INTERVAL 1 MONTH  (Plan Mensual)
+//      plan_duracion = 1 → INTERVAL 1 YEAR
+//      plan_duracion = 2 → INTERVAL 2 YEAR
+//      plan_duracion = 3 → INTERVAL 3 YEAR
+//   7. UPDATE users con plan_duracion, fecha_inicio_plan, fecha_fin_plan
+//
+// IMPORTANTE: plan_duracion = 0 es válido (Plan Mensual).
+// No usar  if (!plan_duracion)  porque falla con 0.
+// Usar     plan_duracion === null || plan_duracion === undefined
 //
 // Recibe: POST /api/payments/ipn
 // ──────────────────────────────────────────────────────
 export const handleIPN = async (req, res) => {
   try {
-    // ── Logs de diagnóstico ────────────────────────────────
-    console.log("[izipay IPN] Headers:", req.headers);
-    console.log("[izipay IPN] Body:",    req.body);
+    // ── PASO 1: validar body ───────────────────────────────
+    console.log("[IPN] body recibido:", JSON.stringify(req.body));
 
-    // ── Validar que req.body existe y no está vacío ────────
     if (!req.body || Object.keys(req.body).length === 0) {
-      console.error("[izipay IPN] Body vacío o no parseado");
-      return res.status(400).json({ error: "Body vacío" });
+      console.error("[IPN] body vacío — verificar express.urlencoded en app.js");
+      return res.status(200).send("ERROR_BODY");
     }
 
-    // ── Leer campos del payload real de Izipay (formato vads_*) ──
-    const vadsOrderId     = req.body["vads_order_id"];
-    const vadsTransStatus = req.body["vads_trans_status"];
-    const vadsTransUuid   = req.body["vads_trans_uuid"];
-    const signature       = req.body["signature"];
+    // ── PASO 2: leer campos vads_* ────────────────────────
+    const vadsOrderId     = String(req.body["vads_order_id"]     || "").trim();
+    const vadsTransStatus = String(req.body["vads_trans_status"] || "").trim();
+    const vadsTransUuid   = String(req.body["vads_trans_uuid"]   || "").trim();
 
-    console.log("[izipay IPN] vads_order_id:",     vadsOrderId);
-    console.log("[izipay IPN] vads_trans_status:", vadsTransStatus);
-    console.log("[izipay IPN] vads_trans_uuid:",   vadsTransUuid);
-    console.log("[izipay IPN] signature:",         signature);
+    console.log("[IPN] vads_order_id:",     vadsOrderId);
+    console.log("[IPN] vads_trans_status:", vadsTransStatus);
+    console.log("[IPN] vads_trans_uuid:",   vadsTransUuid);
 
-    // ── Solo procesar pagos autorizados ───────────────────
-    // Para otros estados (REFUSED, CANCELLED, etc.) confirmar recepción sin actuar.
-    if (vadsTransStatus !== "AUTHORISED") {
-      console.log("[izipay IPN] estado no aprobado:", vadsTransStatus);
+    // ── PASO 3: verificar estado aprobado ─────────────────
+    // Izipay puede enviar distintos estados según configuración y modo TEST:
+    //   "AUTHORISED"            → autorizado por el banco (más común)
+    //   "AUTHORISED_TO_VALIDATE"→ autorizado, requiere validación manual
+    //   "CAPTURED"              → ya capturado/liquidado (auto-capture activo)
+    // Cualquiera de estos indica pago exitoso.
+    const ESTADOS_APROBADOS = ["AUTHORISED", "AUTHORISED_TO_VALIDATE", "CAPTURED"];
+
+    if (!ESTADOS_APROBADOS.includes(vadsTransStatus)) {
+      console.log("[IPN] estado NO aprobado — retornando IGNORED. Status recibido:", JSON.stringify(vadsTransStatus));
       return res.status(200).send("IGNORED");
     }
 
-    // ── Extraer paymentId desde vads_order_id (formato: CERTIA-{id}) ──
-    const paymentId = parseInt((vadsOrderId || "").replace("CERTIA-", ""));
+    console.log("[IPN] estado aprobado confirmado:", vadsTransStatus);
 
-    if (!paymentId || isNaN(paymentId)) {
-      console.error("[izipay IPN] vads_order_id no válido:", vadsOrderId);
+    // ── PASO 4: extraer paymentId desde vads_order_id ─────
+    // Formato esperado: CERTIA-{id}  →  paymentId = {id}
+    const raw       = vadsOrderId.replace(/^CERTIA-/i, "");
+    const paymentId = parseInt(raw, 10);
+
+    console.log("[IPN] paymentId extraído:", paymentId, "(raw:", raw + ")");
+
+    if (isNaN(paymentId) || paymentId <= 0) {
+      console.error("[IPN] vads_order_id no válido:", vadsOrderId);
       return res.status(200).send("IGNORED");
     }
 
-    // ── Buscar el pago en la BD ───────────────────────────
-    const [payments] = await pool.query(
+    // ── PASO 5: buscar payment en BD ──────────────────────
+    const [rows] = await pool.query(
       "SELECT * FROM payments WHERE id = ? LIMIT 1",
       [paymentId]
     );
 
-    if (payments.length === 0) {
-      console.error("[izipay IPN] pago no encontrado en BD, paymentId:", paymentId);
+    if (rows.length === 0) {
+      console.error("[IPN] payment no encontrado en BD. paymentId:", paymentId);
       return res.status(200).send("IGNORED");
     }
 
-    const payment = payments[0];
-    console.log("[izipay IPN] pago encontrado: userId=", payment.user_id, "| plan_duracion=", payment.plan_duracion);
+    const payment = rows[0];
+    console.log("[IPN] payment encontrado:", {
+      id:            payment.id,
+      user_id:       payment.user_id,
+      plan_duracion: payment.plan_duracion,
+      monto:         payment.monto,
+      estado:        payment.estado,
+    });
 
-    // ── Actualizar payments: estado = 'aprobado' ──────────
-    await pool.query(
+    // ── PASO 6: UPDATE payments ───────────────────────────
+    const [updatePayResult] = await pool.query(
       "UPDATE payments SET estado = 'aprobado', transaction_id = ? WHERE id = ?",
       [vadsTransUuid || null, paymentId]
     );
+    console.log("[IPN] UPDATE payments resultado — filas afectadas:", updatePayResult.affectedRows);
 
-    // ── Calcular fecha_fin_plan según plan_duracion ────────
-    // INTERVAL n YEAR calcula correctamente años bisiestos.
-    const duracion = parseInt(payment.plan_duracion);
-    const fechaFinExpr = `DATE_ADD(CURDATE(), INTERVAL ${duracion} YEAR)`;
+    // ── PASO 7: calcular fecha_fin_plan ───────────────────
+    // IMPORTANTE: plan_duracion = 0 es válido (Plan Mensual).
+    // No evaluar con  !plan_duracion  porque  !0 === true  fallaría.
+    const planDuracion = payment.plan_duracion;
 
-    // ── Activar plan en la tabla users ────────────────────
-    await pool.query(
+    if (planDuracion === null || planDuracion === undefined) {
+      console.error("[IPN] plan_duracion es null/undefined — no se puede activar plan");
+      return res.status(200).send("ERROR_DURACION");
+    }
+
+    const duracion = parseInt(planDuracion, 10);
+
+    let fechaFinExpr;
+    if (duracion === 0) {
+      fechaFinExpr = "DATE_ADD(CURDATE(), INTERVAL 1 MONTH)";   // Plan Mensual
+    } else if (duracion === 1) {
+      fechaFinExpr = "DATE_ADD(CURDATE(), INTERVAL 1 YEAR)";
+    } else if (duracion === 2) {
+      fechaFinExpr = "DATE_ADD(CURDATE(), INTERVAL 2 YEAR)";
+    } else if (duracion === 3) {
+      fechaFinExpr = "DATE_ADD(CURDATE(), INTERVAL 3 YEAR)";
+    } else {
+      fechaFinExpr = `DATE_ADD(CURDATE(), INTERVAL ${duracion} YEAR)`;
+    }
+
+    console.log("[IPN] plan_duracion:", duracion, "→ fechaFinExpr:", fechaFinExpr);
+
+    // ── PASO 8: UPDATE users ──────────────────────────────
+    const [updateUserResult] = await pool.query(
       `UPDATE users
-       SET plan_duracion     = ?,
-           fecha_inicio_plan = CURDATE(),
-           fecha_fin_plan    = ${fechaFinExpr}
+         SET plan_duracion     = ?,
+             fecha_inicio_plan = CURDATE(),
+             fecha_fin_plan    = ${fechaFinExpr}
        WHERE id = ?`,
       [duracion, payment.user_id]
     );
+    console.log("[IPN] UPDATE users resultado — filas afectadas:", updateUserResult.affectedRows);
 
-    console.log("[izipay IPN] plan activado: userId=", payment.user_id, "| duracion=", duracion, "años");
+    console.log("[IPN] ✓ plan activado — userId:", payment.user_id, "| plan_duracion:", duracion);
 
-    // Responder HTTP 200 para confirmar recepción a Izipay.
     return res.status(200).send("OK");
 
   } catch (error) {
-    console.error("[izipayController] handleIPN error:", error.message);
-    // Siempre responder 200 para evitar reintentos infinitos del proveedor.
+    console.error("[IPN] error inesperado:", error.message, error.stack);
     return res.status(200).send("ERROR");
   }
 };
